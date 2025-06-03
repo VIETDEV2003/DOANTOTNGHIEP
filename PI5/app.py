@@ -20,12 +20,17 @@ frame_lock = threading.Lock()
 def camera_capture_loop():
     global global_frame
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Không thể mở camera. Kiểm tra lại kết nối hoặc permissions!")
+        return
     while True:
         ret, frame = cap.read()
         if ret:
             with frame_lock:
                 global_frame = frame.copy()
-        time.sleep(0.03)  # ~30fps
+        else:
+            print("Không lấy được frame từ camera!")
+        time.sleep(0.03)
     cap.release()
 
 # Khởi động thread đọc camera khi server start
