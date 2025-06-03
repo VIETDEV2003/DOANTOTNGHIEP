@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, jsonify
 import cv2
 import base64
 from ultralytics import YOLO
 from collections import Counter, deque
 import numpy as np
+from flask import Flask, render_template, request, jsonify, Response
 import paho.mqtt.client as mqtt
 import threading
 import time
