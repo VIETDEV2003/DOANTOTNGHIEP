@@ -1,0 +1,8 @@
+./venv
+/venv
+venv
+.idea
+/logs
+*.log
+captures/
+/captures

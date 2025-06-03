@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Nhận diện côn trùng</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: #f6fafd;
+            min-height: 100vh;
+        }
+
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: #183153;
+            color: #fff;
+            width: 220px;
+            min-width: 220px;
+            max-width: 220px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .sidebar .nav-link {
+            color: #b2c8df;
+            border-radius: 0;
+            font-size: 1.1rem;
+            margin: 0;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+            background: #ffffff15;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 8px;
+        }
+
+        .sidebar .menu-title {
+            color: #f4d35e;
+            letter-spacing: 2px;
+            margin: 30px 0 20px 0;
+            text-align: center;
+        }
+
+        .content-area {
+            flex: 1 1 0;
+            padding: 40px 30px 30px 30px;
+        }
+
+        @media (max-width: 900px) {
+            .main-wrapper {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                min-height: unset;
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .content-area {
+                padding: 10px;
+            }
+        }
+
+        .img-preview {
+            max-width: 400px;
+            max-height: 300px;
+            border: 1px solid #ccc;
+            margin: 10px auto;
+            display: block;
+        }
+
+        .counts-table td, .counts-table th {
+            text-align: center;
+        }
+
+        .btn-group {
+            margin-top: 20px;
+        }
+
+        #clock {
+            font-size: 1.15rem;
+            color: #2962ff;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="menu-title">
+            <h4>MENU</h4>
+        </div>
+        <ul class="nav flex-column w-100" id="sidebarTabs">
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-tab="cam-bien"><i class="bi bi-speedometer"></i> Cảm biến</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#" data-tab="nhan-dien"><i class="bi bi-bug"></i> Nhận diện</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-tab="thong-ke"><i class="bi bi-bar-chart-line"></i> Thống kê</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-tab="tu-dong"><i class="bi bi-robot"></i> Tự động</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-tab="cai-dat"><i class="bi bi-gear"></i> Cài đặt</a>
+            </li>
+        </ul>
+    </nav>
+    <!-- Main content -->
+    <div class="content-area">
+        <div class="tab-pane" id="tab-cam-bien">
+            <h2 class="mb-4 text-center">Cảm biến</h2>
+            <div class="row justify-content-center">
+                <div class="col-md-7">
+                    <canvas id="sensorChart" height="120"></canvas>
+                    <div id="sensorStatus" class="text-center mt-2 text-muted"></div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-success shadow">
+                        <div class="card-header bg-success text-white">
+                            Cảm biến ánh sáng
+                        </div>
+                        <div class="card-body">
+                            <div class="display-4" id="lightSensorValue">--</div>
+                            <div class="small text-muted">Lumen</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Nhận diện -->
+        <div class="tab-pane active" id="tab-nhan-dien">
+            <h2 class="mb-4 text-center">Nhận diện côn trùng</h2>
+            <div class="text-center mb-3">
+                <span id="clock"></span>
+            </div>
+            <div class="text-center btn-group">
+                <button id="captureBtn" class="btn btn-primary">Chụp ảnh nhận diện</button>
+                <button id="startDetectBtn" class="btn btn-success">Nhận diện liên tục</button>
+                <button id="stopDetectBtn" class="btn btn-danger">Dừng liên tục</button>
+                <button id="turnOnLedBtn" class="btn btn-warning">Bật đèn</button>
+                <button id="turnOffLedBtn" class="btn btn-secondary">Tắt đèn</button>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-center">Ảnh kết quả</h5>
+                    <img id="resultImg" class="img-preview" src="" alt="Kết quả nhận diện sẽ hiển thị ở đây">
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-center">Kết quả đếm côn trùng</h5>
+                    <table class="table table-bordered counts-table" id="countsTable">
+                        <thead>
+                        <tr>
+                            <th>Loại</th>
+                            <th>Số lượng</th>
+                        </tr>
+                        </thead>
+                        <tbody id="countsTbody">
+                        <!-- Data -->
+                        </tbody>
+                    </table>
+                    <div id="status" class="mt-3 text-center text-info"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Thống kê -->
+        <div class="tab-pane" id="tab-thong-ke">
+            <h2 class="mb-4 text-center">Thống kê côn trùng</h2>
+            <div class="row">
+                <div class="col-md-12">
+                    <canvas id="statChart" height="150"></canvas>
+                </div>
+            </div>
+            <div id="statStatus" class="mt-3 text-center text-muted"></div>
+        </div>
+        <!-- Tab Tự động -->
+        <div class="tab-pane" id="tab-tu-dong">
+            <h2 class="mb-4 text-center">Tự động</h2>
+            <div class="row justify-content-center">
+                <div class="col-md-5">
+                    <form id="autoOnOffForm" class="border p-3 bg-light mb-3 rounded">
+                        <div class="mb-3">
+                            <label class="form-label">Bật/Tắt</label>
+                            <select class="form-select" id="autoOnOff">
+                                <option value="on">Bật</option>
+                                <option value="off">Tắt</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mốc thời gian</label>
+                            <input type="time" class="form-control" id="autoTime" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Gửi lệnh</button>
+                        <span id="autoOnOffStatus" class="ms-2"></span>
+                    </form>
+                </div>
+            </div>
+            <div class="row justify-content-center mt-4">
+                <div class="col-md-7">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <b>Lịch tự động</b>
+                        </div>
+                        <div class="card-body p-2">
+                            <table class="table table-bordered mb-0" id="scheduleList">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thời gian</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Cài đặt -->
+        <div class="tab-pane" id="tab-cai-dat">
+            <h2 class="mb-4 text-center">Cài đặt</h2>
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <form id="configForm">
+                        <div class="mb-3">
+                            <label for="speedInput" class="form-label">Tốc độ băng tải (speed, 0-255):</label>
+                            <input type="number" class="form-control" id="speedInput" name="speed" min="0" max="255"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="timeInput" class="form-label">Thời gian chạy (ms):</label>
+                            <input type="number" class="form-control" id="timeInput" name="time" min="100" step="100"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ddosInput" class="form-label">Cảnh báo DDoS (số lượng côn trùng):</label>
+                            <input type="number" class="form-control" id="ddosInput" name="ddos" min="1" step="1"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn btn-warning">Lưu cấu hình</button>
+                        <span id="configStatus" class="ms-3 text-success"></span>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+    <div id="insectToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
+         aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMsg">
+                Nhiều côn trùng hơn ngưỡng cho phép!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+<!-- Optional: Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Sidebar tab switching
+    document.querySelectorAll('#sidebarTabs .nav-link').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Remove 'active' from all sidebar nav links
+            document.querySelectorAll('#sidebarTabs .nav-link').forEach(function (nav) {
+                nav.classList.remove('active');
+            });
+            link.classList.add('active');
+            // Hide all tab panes
+            document.querySelectorAll('.tab-pane').forEach(function (tab) {
+                tab.classList.remove('active');
+            });
+            // Show current pane
+            const tabId = "tab-" + link.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+            // Nếu bấm vào tab thống kê thì vẽ chart
+            if (tabId === "tab-thong-ke") loadStatsChart();
+        });
+    });
+
+    // --- Hiển thị thời gian thực ---
+    function startClock() {
+        function updateClock() {
+            const now = new Date();
+            // Định dạng: 23/05/2025 14:12:31
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            const h = String(now.getHours()).padStart(2, '0');
+            const mi = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').innerText = `${d}/${m}/${y} ${h}:${mi}:${s}`;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    }
+
+    startClock();
+
+    // --- Polling và sự kiện các nút ---
+    let pollInterval = null;
+
+    document.getElementById('captureBtn').onclick = function () {
+        stopPolling();
+        document.getElementById('status').innerText = "Đang chụp ảnh và nhận diện...";
+        fetch('/capture', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('status').innerText = data.error;
+                    return;
+                }
+                document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
+                updateCountsTable(data.counts);
+                document.getElementById('status').innerText = "Đã nhận diện và gửi lệnh băng tải!";
+            });
+    };
+
+    document.getElementById('startDetectBtn').onclick = function () {
+        document.getElementById('status').innerText = "Đang bắt đầu nhận diện liên tục...";
+        fetch('/start_detect', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
+                startPolling();
+            });
+    };
+
+    document.getElementById('stopDetectBtn').onclick = function () {
+        document.getElementById('status').innerText = "Đang dừng nhận diện liên tục...";
+        fetch('/stop_detect', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
+                stopPolling();
+            });
+    };
+
+    // --- Polling functions for continuous detect ---
+    function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(fetchLatestDetect, 1000);
+    }
+
+    function stopPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = null;
+    }
+
+    function fetchLatestDetect() {
+        fetch('/latest_detect')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.image) {
+                    document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
+                    updateCountsTable(data.counts);
+                }
+            });
+    }
+
+    // --- Cài đặt băng tải ---
+    function loadConfigForm() {
+        fetch('/get_config')
+            .then(r => r.json())
+            .then(cfg => {
+                document.getElementById('speedInput').value = cfg.speed;
+                document.getElementById('timeInput').value = cfg.time;
+                document.getElementById('ddosInput').value = cfg.ddos || 5;
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadConfigForm);
+    document.querySelector('a[data-tab="cai-dat"]').addEventListener('click', loadConfigForm);
+
+    // Khi submit form
+    document.getElementById('configForm').onsubmit = function (e) {
+        e.preventDefault();
+        let speed = parseInt(document.getElementById('speedInput').value) || 255;
+        let time = parseInt(document.getElementById('timeInput').value) || 1000;
+        let ddos = parseInt(document.getElementById('ddosInput').value) || 5;
+        fetch('/save_config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({speed: speed, time: time, ddos: ddos})
+        })
+            .then(r => r.json())
+            .then(data => {
+                let stt = document.getElementById('configStatus');
+                if (data.status === "ok") {
+                    stt.innerText = "Đã lưu thành công!";
+                    stt.classList.remove("text-danger");
+                    stt.classList.add("text-success");
+                } else {
+                    stt.innerText = "Lỗi: " + data.msg;
+                    stt.classList.remove("text-success");
+                    stt.classList.add("text-danger");
+                }
+                setTimeout(() => stt.innerText = "", 3000);
+            });
+    }
+
+    // --- Sensor Chart ---
+    let sensorChart;
+    let sensorChartData = {
+        labels: [],
+        datasets: [
+            {
+                label: "Nhiệt độ (°C)",
+                data: [],
+                borderColor: "#f44336",
+                backgroundColor: "rgba(244,67,54,0.2)",
+                yAxisID: 'y',
+                tension: 0.2
+            },
+            {
+                label: "Độ ẩm (%)",
+                data: [],
+                borderColor: "#2196f3",
+                backgroundColor: "rgba(33,150,243,0.2)",
+                yAxisID: 'y1',
+                tension: 0.2
+            }
+        ]
+    };
+
+    function drawSensorChart() {
+        var ctx = document.getElementById('sensorChart').getContext('2d');
+        sensorChart = new Chart(ctx, {
+            type: 'line',
+            data: sensorChartData,
+            options: {
+                responsive: true,
+                interaction: {mode: 'index', intersect: false},
+                stacked: false,
+                plugins: {
+                    legend: {position: 'top'},
+                    title: {display: false}
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        min: 0,
+                        max: 60,
+                        title: {display: true, text: "Nhiệt độ (°C)"}
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        title: {display: true, text: "Độ ẩm (%)"},
+                        grid: {drawOnChartArea: false}
+                    }
+                }
+            }
+        });
+    }
+
+    function fetchSensorDataAndUpdateChart() {
+        fetch('/sensor_data')
+            .then(r => r.json())
+            .then(arr => {
+                if (!sensorChart) return;
+                sensorChartData.labels = arr.map(d => d.time);
+                sensorChartData.datasets[0].data = arr.map(d => d.temperature);
+                sensorChartData.datasets[1].data = arr.map(d => d.humidity);
+                sensorChart.update();
+                if (arr.length > 0) {
+                    document.getElementById('lightSensorValue').innerText = arr[arr.length - 1].light;
+                    document.getElementById('sensorStatus').innerText =
+                        "Nhiệt độ: " + arr[arr.length - 1].temperature + "°C, Độ ẩm: " + arr[arr.length - 1].humidity + "%, cập nhật lúc " + arr[arr.length - 1].time;
+                } else {
+                    document.getElementById('sensorStatus').innerText = "Chưa có dữ liệu cảm biến...";
+                    document.getElementById('lightSensorValue').innerText = "--";
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.getElementById('sensorChart')) {
+            drawSensorChart();
+            setInterval(fetchSensorDataAndUpdateChart, 1200);
+        }
+    });
+    document.querySelector('a[data-tab="cam-bien"]').addEventListener('click', function () {
+        if (!sensorChart) drawSensorChart();
+    });
+
+    // --- Thống kê côn trùng ---
+    let statChart;
+
+    function drawStatChart(stat) {
+        // stat: { labels: [ngày], datasets: [ { label: loại, data: [số lượng từng ngày], backgroundColor } ] }
+        const ctx = document.getElementById('statChart').getContext('2d');
+        if (statChart) statChart.destroy();
+        statChart = new Chart(ctx, {
+            type: 'bar',
+            data: stat,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {position: 'top'},
+                    title: {display: false}
+                },
+                scales: {
+                    x: {stacked: true},
+                    y: {stacked: true, beginAtZero: true}
+                }
+            }
+        });
+    }
+
+    function loadStatsChart() {
+        document.getElementById('statStatus').innerText = "Đang tải thống kê...";
+        fetch('/stat_counts')
+            .then(r => r.json())
+            .then(stat => {
+                if (stat.labels.length === 0) {
+                    document.getElementById('statStatus').innerText = "Không có dữ liệu thống kê!";
+                    if (statChart) statChart.destroy();
+                    return;
+                }
+                drawStatChart(stat);
+                document.getElementById('statStatus').innerText = "Số lượng côn trùng theo ngày và loại";
+            }).catch(err => {
+            document.getElementById('statStatus').innerText = "Không thể tải thống kê!";
+        });
+    }
+
+    document.getElementById('turnOnLedBtn').onclick = function () {
+        fetch('/turn_on_led', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh bật đèn!";
+            })
+            .catch(() => {
+                document.getElementById('status').innerText = "Không thể gửi lệnh bật đèn!";
+            });
+    }
+
+    document.getElementById('turnOffLedBtn').onclick = function () {
+        fetch('/turn_off_led', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh tắt đèn!";
+            })
+            .catch(() => {
+                document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
+            });
+    }
+    let insectThreshold = 5; // mặc định, sẽ cập nhật từ config
+
+    // Lấy threshold từ config khi load trang và khi mở tab Nhận diện
+    function loadThresholdConfig() {
+        fetch('/get_config')
+            .then(r => r.json())
+            .then(cfg => {
+                console.log(cfg)
+                if (cfg.ddos) insectThreshold = parseInt(cfg.ddos);
+                console.log(cfg.ddos)
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadThresholdConfig);
+    document.querySelector('a[data-tab="nhan-dien"]').addEventListener('click', loadThresholdConfig);
+
+    // Hiển thị toast bootstrap
+    function showInsectToast(total) {
+        let toastMsg = document.getElementById("toastMsg");
+        toastMsg.innerText = `Số lượng côn trùng (${total}) vượt ngưỡng cho phép (${insectThreshold})!`;
+        let toastLive = document.getElementById('insectToast');
+        let toast = new bootstrap.Toast(toastLive);
+        toast.show();
+    }
+
+    function updateCountsTable(counts) {
+        console.log("So luong con trung :" + Object.keys(counts).length)
+        console.log("So luong canh bao : " + insectThreshold)
+        const tbody = document.getElementById('countsTbody');
+        tbody.innerHTML = '';
+        let total = 0;
+        if (counts && Object.keys(counts).length > 0) {
+            Object.keys(counts).forEach(function (key) {
+                tbody.innerHTML += `<tr><td>${key}</td><td>${counts[key]}</td></tr>`;
+                total += counts[key];
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="2">Không phát hiện côn trùng.</td></tr>';
+        }
+        // Check threshold và báo toast
+        if (total > insectThreshold) showInsectToast(total);
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('autoOnOffForm');
+        if (!form) return;
+        form.onsubmit = function (e) {
+            e.preventDefault();
+            const status = document.getElementById('autoOnOff').value; // "on" hoặc "off"
+            const time = document.getElementById('autoTime').value; // "HH:MM"
+            if (!time) {
+                document.getElementById('autoOnOffStatus').innerText = "Bạn phải chọn mốc thời gian!";
+                document.getElementById('autoOnOffStatus').className = "ms-2 text-danger";
+                return;
+            }
+            // Build JSON gửi qua API
+            const payload = {
+                action: "add_schedule",
+                data: {
+                    status: status,
+                    time: time
+                }
+            };
+            fetch('/control', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            })
+                .then(r => r.json())
+                .then(resp => {
+                    if (resp.status === "ok") {
+                        document.getElementById('autoOnOffStatus').innerText = "Đã gửi thành công!";
+                        document.getElementById('autoOnOffStatus').className = "ms-2 text-success";
+                        form.reset();
+                    } else {
+                        document.getElementById('autoOnOffStatus').innerText = "Gửi thất bại: " + resp.msg;
+                        document.getElementById('autoOnOffStatus').className = "ms-2 text-danger";
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('autoOnOffStatus').innerText = "Lỗi kết nối API!";
+                    document.getElementById('autoOnOffStatus').className = "ms-2 text-danger";
+                });
+        };
+    });
+
+    document.addEventListener('DOMContentLoaded', loadScheduleList);
+
+
+    function loadScheduleList() {
+        fetch('/list_schedule')
+            .then(res => res.json())
+            .then(list => {
+                const tbody = document.querySelector('#scheduleList tbody');
+                tbody.innerHTML = "";
+                if (Array.isArray(list) && list.length > 0) {
+                    list.forEach((item, idx) => {
+                        tbody.innerHTML += `
+                        <tr>
+                            <td>${idx + 1}</td>
+                            <td>
+                                <span class="badge ${item.status === "on" ? "bg-success" : "bg-danger"}">
+                                    ${item.status === "on" ? "Bật" : "Tắt"}
+                                </span>
+                            </td>
+                            <td>${item.time}</td>
+                        </tr>
+                    `;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Không có lịch nào!</td></tr>`;
+                }
+            });
+    }
+</script>
+</body>
+</html>
