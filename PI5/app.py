@@ -16,29 +16,6 @@ from collections import Counter, deque, defaultdict
 # --- Camera shared buffer ---
 global_frame = None
 frame_lock = threading.Lock()
-
-def camera_capture_loop():
-    global global_frame
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Không thể mở camera. Kiểm tra lại kết nối hoặc permissions!")
-        return
-    while True:
-        ret, frame = cap.read()
-        if ret:
-            with frame_lock:
-                global_frame = frame.copy()
-        else:
-            print("Không lay được frame từ camera!")
-        time.sleep(0.03)
-    cap.release()
-
-# Khởi động thread đọc camera khi server start
-threading.Thread(target=camera_capture_loop, daemon=True).start()
-
-def get_latest_frame():
-    with frame_lock:
-        return global_frame.copy() if global_frame is not None else None
 app = Flask(__name__)
 
 model = YOLO('runs/detect/contrung_model/weights/best.pt')
@@ -81,6 +58,29 @@ latest_result = {"image": "", "counts": {}}
 
 # Dữ liệu cảm biến
 sensor_data_buffer = deque(maxlen=200)
+
+def camera_capture_loop():
+    global global_frame
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Không thể mở camera. Kiểm tra lại kết nối hoặc permissions!")
+        return
+    while True:
+        ret, frame = cap.read()
+        if ret:
+            with frame_lock:
+                global_frame = frame.copy()
+        else:
+            print("Không lay được frame từ camera!")
+        time.sleep(0.03)
+    cap.release()
+
+# Khởi động thread đọc camera khi server start
+threading.Thread(target=camera_capture_loop, daemon=True).start()
+
+def get_latest_frame():
+    with frame_lock:
+        return global_frame.copy() if global_frame is not None else None
 
 def process_frame_with_yolo(frame):
     insect_counts = Counter()
