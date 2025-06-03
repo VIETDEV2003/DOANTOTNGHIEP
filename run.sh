@@ -18,7 +18,7 @@ source venv/bin/activate
 #pip install -r requirements.txt
 
 # Cai dat cac thu vien can thiet
-pip install -r requirements.txt
+#pip install -r requirements.txt
 
 # Chay chuong trinh python
 python app.py
