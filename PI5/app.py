@@ -263,7 +263,7 @@ def turn_off_led():
         client = mqtt.Client()
         client.username_pw_set(MQTT_USER, MQTT_PASS)
         client.connect(MQTT_HOST, MQTT_PORT, 60)
-        client.publish(MQTT_TOPIC, json.dumps({"led": "off"}))
+        client.publish(MQTT_TOPIC, json.dumps({"led2": "off"}))
         client.disconnect()
         return jsonify({"msg": "Đã gửi lệnh tắt đèn qua MQTT!"})
     except Exception as e:
@@ -276,7 +276,7 @@ def turn_on_led():
         client = mqtt.Client()
         client.username_pw_set(MQTT_USER, MQTT_PASS)
         client.connect(MQTT_HOST, MQTT_PORT, 60)
-        client.publish(MQTT_TOPIC, json.dumps({"led": "on"}))
+        client.publish(MQTT_TOPIC, json.dumps({"led2": "on"}))
         client.disconnect()
         return jsonify({"msg": "Đã gửi lệnh bật đèn qua MQTT!"})
     except Exception as e:
