@@ -283,7 +283,7 @@ def turn_on_led():
         return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
 
 @app.route('/turn_off_uva', methods=['POST'])
-def turn_off_led():
+def turn_off_uva():
     try:
         client = mqtt.Client()
         client.username_pw_set(MQTT_USER, MQTT_PASS)
@@ -296,7 +296,7 @@ def turn_off_led():
 
 
 @app.route('/turn_on_uva', methods=['POST'])
-def turn_on_led():
+def turn_on_uva():
     try:
         client = mqtt.Client()
         client.username_pw_set(MQTT_USER, MQTT_PASS)
