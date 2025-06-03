@@ -7,6 +7,9 @@ git reset --hard HEAD
 git clean -fd
 git pull
 
+# Cai dat cac thu vien can thiet
+pip install -r requirements.txt
+
 
 # Kich hoat moi truong ao python
 source venv/bin/activate
