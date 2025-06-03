@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f082fe28-00c3-432c-8056-4607a82b5d19" name="Changes" comment="" />
+    <list default="true" id="f082fe28-00c3-432c-8056-4607a82b5d19" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run.sh" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -54,7 +56,7 @@
       <option name="presentableId" value="Default" />
       <updated>1748940721608</updated>
       <workItem from="1748940721836" duration="305000" />
-      <workItem from="1748941032354" duration="811000" />
+      <workItem from="1748941032354" duration="879000" />
     </task>
     <servers />
   </component>
