@@ -61,18 +61,38 @@ sensor_data_buffer = deque(maxlen=200)
 
 def camera_capture_loop():
     global global_frame
+    max_index = 35  # Số lượng camera device tối đa bạn có thể thử
     while True:
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("Không thể mở camera. Thử lại sau 5s...")
+        # Tìm index camera hợp lệ
+        cam_index = None
+        for i in range(1, max_index + 1):  # Bỏ index 0 vì /dev/video0 không tồn tại
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                ret, frame = cap.read()
+                if ret:
+                    cam_index = i
+                    cap.release()
+                    print(f"Mở được camera ở index {i}")
+                    break
+                cap.release()
+        if cam_index is None:
+            print("Không tìm thấy camera khả dụng. Thử lại sau 5s...")
             time.sleep(5)
             continue
+
+        # Đã tìm được index, mở và đọc liên tục
+        cap = cv2.VideoCapture(cam_index)
+        if not cap.isOpened():
+            print(f"Không thể mở camera ở index {cam_index}. Thử lại sau 5s...")
+            time.sleep(5)
+            continue
+        print(f"Bắt đầu capture từ camera index {cam_index}")
         while True:
             ret, frame = cap.read()
             if not ret:
-                print("Không lấy được frame từ camera! Thử mở lại camera...")
+                print("Không lấy được frame từ camera! Thử lại tìm camera...")
                 cap.release()
-                break  # Thoát loop nhỏ, thử lại mở camera
+                break  # Thoát loop nhỏ, thử lại tìm lại index
             with frame_lock:
                 global_frame = frame.copy()
             time.sleep(0.03)
