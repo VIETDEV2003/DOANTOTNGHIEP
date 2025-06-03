@@ -307,6 +307,21 @@ def turn_on_uva():
     except Exception as e:
         return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
 
+@app.route('/camera_stream')
+def camera_stream():
+    def gen():
+        cap = cv2.VideoCapture(0)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            _, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        cap.release()
+    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 @app.route('/video', methods=['POST'])
 def process_video():
     if 'video' not in request.files:
