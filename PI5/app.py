@@ -59,35 +59,23 @@ latest_result = {"image": "", "counts": {}}
 # Dữ liệu cảm biến
 sensor_data_buffer = deque(maxlen=200)
 
-def find_camera_index(max_index=35):
-    for i in range(1, max_index + 1):  # Bỏ index 0 nếu không có /dev/video0
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            ret, frame = cap.read()
-            cap.release()
-            if ret:
-                print(f"Mở được camera ở index {i}")
-                return i
-    print("Không tìm thấy camera khả dụng.")
-    return None
-
 def camera_capture_loop():
     global global_frame
-    cam_index = find_camera_index()
-    if cam_index is None:
-        print("Không có camera để sử dụng. Thoát thread camera.")
-        return
-    cap = cv2.VideoCapture(cam_index)
-    print(f"Bắt đầu capture từ camera index {cam_index}")
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Không lấy được frame từ camera! Thử lại sau 3s...")
-            time.sleep(3)
+        cap = cv2.VideoCapture(1)
+        if not cap.isOpened():
+            print("Không thể mở camera. Thử lại sau 5s...")
+            time.sleep(5)
             continue
-        with frame_lock:
-            global_frame = frame.copy()
-        time.sleep(0.03)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Không lấy được frame từ camera! Thử mở lại camera...")
+                cap.release()
+                break  # Thoát loop nhỏ, thử lại mở camera
+            with frame_lock:
+                global_frame = frame.copy()
+            time.sleep(0.03)
 
 
 def get_latest_frame():
