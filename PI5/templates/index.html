@@ -173,6 +173,10 @@
                 <button id="turnOnLedBtn" class="btn btn-warning">Bật đèn</button>
                 <button id="turnOffLedBtn" class="btn btn-secondary">Tắt đèn</button>
             </div>
+            <div class="text-center btn-group">
+                <button id="turnOnUVABtn" class="btn btn-warning">Bật đèn UVA</button>
+                <button id="turnOffUVABtn" class="btn btn-secondary">Tắt đèn UVA</button>
+            </div>
             <hr>
             <div class="row">
                 <div class="col-md-6">
@@ -592,6 +596,30 @@
                 document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
             });
     }
+
+    document.getElementById('turnOnUVABtn').onclick = function () {
+        fetch('/turn_on_uva', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh bật đèn!";
+            })
+            .catch(() => {
+                document.getElementById('status').innerText = "Không thể gửi lệnh bật đèn!";
+            });
+    }
+
+    document.getElementById('turnOffUVABtn').onclick = function () {
+        fetch('/turn_off_uva', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh tắt đèn!";
+            })
+            .catch(() => {
+                document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
+            });
+    }
+
+
     let insectThreshold = 5; // mặc định, sẽ cập nhật từ config
 
     // Lấy threshold từ config khi load trang và khi mở tab Nhận diện
