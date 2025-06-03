@@ -61,22 +61,22 @@ sensor_data_buffer = deque(maxlen=200)
 
 def camera_capture_loop():
     global global_frame
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Không thể mở camera. Kiểm tra lại kết nối hoặc permissions!")
-        return
     while True:
-        ret, frame = cap.read()
-        if ret:
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("Không thể mở camera. Thử lại sau 5s...")
+            time.sleep(5)
+            continue
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Không lấy được frame từ camera! Thử mở lại camera...")
+                cap.release()
+                break  # Thoát loop nhỏ, thử lại mở camera
             with frame_lock:
                 global_frame = frame.copy()
-        else:
-            print("Không lay được frame từ camera!")
-        time.sleep(0.03)
-    cap.release()
+            time.sleep(0.03)
 
-# Khởi động thread đọc camera khi server start
-threading.Thread(target=camera_capture_loop, daemon=True).start()
 
 def get_latest_frame():
     with frame_lock:
@@ -455,4 +455,6 @@ def list_schedule():
 
 
 if __name__ == '__main__':
+    # Khởi động thread đọc camera khi server start
+    threading.Thread(target=camera_capture_loop, daemon=True).start()
     app.run(debug=True, host='0.0.0.0')
