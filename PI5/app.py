@@ -29,7 +29,7 @@ def camera_capture_loop():
             with frame_lock:
                 global_frame = frame.copy()
         else:
-            print("Không lấy được frame từ camera!")
+            print("Không lay được frame từ camera!")
         time.sleep(0.03)
     cap.release()
 
