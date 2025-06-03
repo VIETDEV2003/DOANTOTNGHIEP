@@ -7,15 +7,15 @@ git reset --hard HEAD
 git clean -fd
 git pull
 
-rm -rf venv
+#rm -rf venv
 # Tạo lại venv mới
-python3 -m venv venv
+#python3 -m venv venv
 
 # Kích hoạt lại venv
 source venv/bin/activate
 
 # Cài lại requirements
-pip install -r requirements.txt
+#pip install -r requirements.txt
 
 # Cai dat cac thu vien can thiet
 pip install -r requirements.txt
