@@ -13,7 +13,27 @@ import json
 import glob
 from collections import Counter, deque, defaultdict
 
+# --- Camera shared buffer ---
+global_frame = None
+frame_lock = threading.Lock()
 
+def camera_capture_loop():
+    global global_frame
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        if ret:
+            with frame_lock:
+                global_frame = frame.copy()
+        time.sleep(0.03)  # ~30fps
+    cap.release()
+
+# Khởi động thread đọc camera khi server start
+threading.Thread(target=camera_capture_loop, daemon=True).start()
+
+def get_latest_frame():
+    with frame_lock:
+        return global_frame.copy() if global_frame is not None else None
 app = Flask(__name__)
 
 model = YOLO('runs/detect/contrung_model/weights/best.pt')
@@ -92,17 +112,15 @@ def log_detection(dt, counts, image_path, detect_id):
 
 def continuous_detect():
     global detection_running, latest_result
-    cap = cv2.VideoCapture(0)
     detect_id = 1
     while detection_running:
         config = load_config()  # lấy lại config mới nhất
-        # Gửi MQTT dùng config
         send_conveyor_control(speed=config.get("speed", 255), time_ms=config.get("time", 1000))
         time.sleep(config.get("time", 1000) / 1000.0)
 
         for _ in range(7):
-            ret, frame = cap.read()
-        if not ret:
+            frame = get_latest_frame()
+        if frame is None:
             print("Không lấy được hình từ camera.")
             break
 
@@ -234,11 +252,8 @@ def capture():
     config = load_config()
     send_conveyor_control(speed=config.get("speed",255), time_ms=config.get("time",1000))
     time.sleep(config.get("time",1000)/1000.0)
-    cap = cv2.VideoCapture(0)
-    for _ in range(7):  # FLUSH để lấy frame mới nhất
-        ret, frame = cap.read()
-    cap.release()
-    if not ret:
+    frame = get_latest_frame()
+    if frame is None:
         return jsonify({"error": "Không truy cập được camera"}), 500
     dt = datetime.now()
     frame, counts = process_frame_with_yolo(frame)
@@ -310,16 +325,14 @@ def turn_on_uva():
 @app.route('/camera_stream')
 def camera_stream():
     def gen():
-        cap = cv2.VideoCapture(0)
         while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            _, buffer = cv2.imencode('.jpg', frame)
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        cap.release()
+            frame = get_latest_frame()
+            if frame is not None:
+                _, buffer = cv2.imencode('.jpg', frame)
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.03)
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/video', methods=['POST'])
