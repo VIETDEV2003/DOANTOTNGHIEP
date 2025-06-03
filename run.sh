@@ -7,6 +7,7 @@ git reset --hard HEAD
 git clean -fd
 git pull
 
+
 # Kich hoat moi truong ao python
 source venv/bin/activate
 
