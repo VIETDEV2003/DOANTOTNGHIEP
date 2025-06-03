@@ -3,3 +3,4 @@ requests==2.31.0
 numpy==1.25.2
 opencv-contrib-python
 ultralytics
+paho-mqtt
