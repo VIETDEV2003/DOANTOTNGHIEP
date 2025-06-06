@@ -2,10 +2,8 @@
 # Cài đặt
 
 ```
-mkdir ~/Desktop/doan
+ssh pi@192.168.31.124
 cd ~/Desktop/doan
-git clone https://github.com/VIETDEV2003/DOANTOTNGHIEP .
-cd doan
 sudo chmod 777 run.sh && ./run.sh
 ```
 
