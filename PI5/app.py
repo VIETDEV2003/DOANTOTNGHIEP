@@ -343,11 +343,15 @@ def turn_on_uva():
     except Exception as e:
         return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
 
-@app.route('/camera_stream')
+motion_lock = threading.Lock()
+
+@@app.route('/camera_stream')
 def camera_stream():
     prev_frame = [None]
+    global detection_running
 
     def gen():
+        global detection_running  # Cần để gán biến toàn cục
         while True:
             frame = get_latest_frame()
             if frame is not None:
@@ -383,6 +387,18 @@ def camera_stream():
                 cv2.rectangle(vis_frame, (x1, y1), (x2, y2), (0,0,255), 2)
                 if motion:
                     cv2.putText(vis_frame, "Co chuyen dong!", (x1+10, y1+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+
+                    # --- LOCK: chỉ trigger khi chưa running ---
+                    if not detection_running:
+                        # Đặt running = True để lock
+                        detection_running = True
+                        # Có thể gọi thread nhận diện hoặc gửi trigger tại đây
+                        # threading.Thread(target=your_detect_func).start()
+                        print(">>> Trigger NHẬN DIỆN hoặc hành động ở đây <<<")
+
+                # Khi KHÔNG còn chuyển động nữa, unlock
+                if not motion and detection_running:
+                    detection_running = False
 
                 prev_frame[0] = frame.copy()
 
