@@ -275,7 +275,12 @@
                                    required>
                         </div>
                         <div class="mb-3">
-                            <label for="timeInput" class="form-label">Thời gian chạy (ms):</label>
+                            <label for="timeActionInput" class="form-label">Thời gian chạy trước khi chụp (ms):</label>
+                            <input type="number" class="form-control" id="timeActionInput" name="time_action" min="100"
+                                   step="100" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="timeInput" class="form-label">Thời gian chạy bỏ côn trùng (ms):</label>
                             <input type="number" class="form-control" id="timeInput" name="time" min="100" step="100"
                                    required>
                         </div>
@@ -357,36 +362,36 @@
         stopPolling();
         document.getElementById('status').innerText = "Đang chụp ảnh và nhận diện...";
         fetch('/capture', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('status').innerText = data.error;
-                    return;
-                }
-                document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
-                updateCountsTable(data.counts);
-                document.getElementById('status').innerText = "Đã nhận diện và gửi lệnh băng tải!";
-            });
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('status').innerText = data.error;
+                        return;
+                    }
+                    document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
+                    updateCountsTable(data.counts);
+                    document.getElementById('status').innerText = "Đã nhận diện và gửi lệnh băng tải!";
+                });
     };
 
     document.getElementById('startDetectBtn').onclick = function () {
         document.getElementById('status').innerText = "Đang bắt đầu nhận diện liên tục...";
         fetch('/start_detect', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
-                startPolling();
-            });
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
+                    startPolling();
+                });
     };
 
     document.getElementById('stopDetectBtn').onclick = function () {
         document.getElementById('status').innerText = "Đang dừng nhận diện liên tục...";
         fetch('/stop_detect', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
-                stopPolling();
-            });
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
+                    stopPolling();
+                });
     };
 
     // --- Polling functions for continuous detect ---
@@ -402,24 +407,25 @@
 
     function fetchLatestDetect() {
         fetch('/latest_detect')
-            .then(r => r.json())
-            .then(data => {
-                if (data && data.image) {
-                    document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
-                    updateCountsTable(data.counts);
-                }
-            });
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.image) {
+                        document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
+                        updateCountsTable(data.counts);
+                    }
+                });
     }
 
     // --- Cài đặt băng tải ---
     function loadConfigForm() {
         fetch('/get_config')
-            .then(r => r.json())
-            .then(cfg => {
-                document.getElementById('speedInput').value = cfg.speed;
-                document.getElementById('timeInput').value = cfg.time;
-                document.getElementById('ddosInput').value = cfg.ddos || 5;
-            });
+                .then(r => r.json())
+                .then(cfg => {
+                    document.getElementById('speedInput').value = cfg.speed;
+                    document.getElementById('timeInput').value = cfg.time;
+                    document.getElementById('ddosInput').value = cfg.ddos || 5;
+                    document.getElementById('timeActionInput').value = cfg.time_action || 1000; // <-- thêm dòng này
+                });
     }
 
     document.addEventListener('DOMContentLoaded', loadConfigForm);
@@ -431,25 +437,26 @@
         let speed = parseInt(document.getElementById('speedInput').value) || 255;
         let time = parseInt(document.getElementById('timeInput').value) || 1000;
         let ddos = parseInt(document.getElementById('ddosInput').value) || 5;
+        let time_action = parseInt(document.getElementById('timeActionInput').value) || 1000; // <-- thêm dòng này
         fetch('/save_config', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({speed: speed, time: time, ddos: ddos})
+            body: JSON.stringify({speed: speed, time: time, ddos: ddos, time_action: time_action}) // <-- thêm time_action
         })
-            .then(r => r.json())
-            .then(data => {
-                let stt = document.getElementById('configStatus');
-                if (data.status === "ok") {
-                    stt.innerText = "Đã lưu thành công!";
-                    stt.classList.remove("text-danger");
-                    stt.classList.add("text-success");
-                } else {
-                    stt.innerText = "Lỗi: " + data.msg;
-                    stt.classList.remove("text-success");
-                    stt.classList.add("text-danger");
-                }
-                setTimeout(() => stt.innerText = "", 3000);
-            });
+                .then(r => r.json())
+                .then(data => {
+                    let stt = document.getElementById('configStatus');
+                    if (data.status === "ok") {
+                        stt.innerText = "Đã lưu thành công!";
+                        stt.classList.remove("text-danger");
+                        stt.classList.add("text-success");
+                    } else {
+                        stt.innerText = "Lỗi: " + data.msg;
+                        stt.classList.remove("text-success");
+                        stt.classList.add("text-danger");
+                    }
+                    setTimeout(() => stt.innerText = "", 3000);
+                });
     }
 
     // --- Sensor Chart ---
@@ -514,22 +521,22 @@
 
     function fetchSensorDataAndUpdateChart() {
         fetch('/sensor_data')
-            .then(r => r.json())
-            .then(arr => {
-                if (!sensorChart) return;
-                sensorChartData.labels = arr.map(d => d.time);
-                sensorChartData.datasets[0].data = arr.map(d => d.temperature);
-                sensorChartData.datasets[1].data = arr.map(d => d.humidity);
-                sensorChart.update();
-                if (arr.length > 0) {
-                    document.getElementById('lightSensorValue').innerText = arr[arr.length - 1].light;
-                    document.getElementById('sensorStatus').innerText =
-                        "Nhiệt độ: " + arr[arr.length - 1].temperature + "°C, Độ ẩm: " + arr[arr.length - 1].humidity + "%, cập nhật lúc " + arr[arr.length - 1].time;
-                } else {
-                    document.getElementById('sensorStatus').innerText = "Chưa có dữ liệu cảm biến...";
-                    document.getElementById('lightSensorValue').innerText = "--";
-                }
-            });
+                .then(r => r.json())
+                .then(arr => {
+                    if (!sensorChart) return;
+                    sensorChartData.labels = arr.map(d => d.time);
+                    sensorChartData.datasets[0].data = arr.map(d => d.temperature);
+                    sensorChartData.datasets[1].data = arr.map(d => d.humidity);
+                    sensorChart.update();
+                    if (arr.length > 0) {
+                        document.getElementById('lightSensorValue').innerText = arr[arr.length - 1].light;
+                        document.getElementById('sensorStatus').innerText =
+                                "Nhiệt độ: " + arr[arr.length - 1].temperature + "°C, Độ ẩm: " + arr[arr.length - 1].humidity + "%, cập nhật lúc " + arr[arr.length - 1].time;
+                    } else {
+                        document.getElementById('sensorStatus').innerText = "Chưa có dữ liệu cảm biến...";
+                        document.getElementById('lightSensorValue').innerText = "--";
+                    }
+                });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -569,62 +576,62 @@
     function loadStatsChart() {
         document.getElementById('statStatus').innerText = "Đang tải thống kê...";
         fetch('/stat_counts')
-            .then(r => r.json())
-            .then(stat => {
-                if (stat.labels.length === 0) {
-                    document.getElementById('statStatus').innerText = "Không có dữ liệu thống kê!";
-                    if (statChart) statChart.destroy();
-                    return;
-                }
-                drawStatChart(stat);
-                document.getElementById('statStatus').innerText = "Số lượng côn trùng theo ngày và loại";
-            }).catch(err => {
+                .then(r => r.json())
+                .then(stat => {
+                    if (stat.labels.length === 0) {
+                        document.getElementById('statStatus').innerText = "Không có dữ liệu thống kê!";
+                        if (statChart) statChart.destroy();
+                        return;
+                    }
+                    drawStatChart(stat);
+                    document.getElementById('statStatus').innerText = "Số lượng côn trùng theo ngày và loại";
+                }).catch(err => {
             document.getElementById('statStatus').innerText = "Không thể tải thống kê!";
         });
     }
 
     document.getElementById('turnOnLedBtn').onclick = function () {
         fetch('/turn_on_led', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh bật đèn!";
-            })
-            .catch(() => {
-                document.getElementById('status').innerText = "Không thể gửi lệnh bật đèn!";
-            });
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.msg || "Đã gửi lệnh bật đèn!";
+                })
+                .catch(() => {
+                    document.getElementById('status').innerText = "Không thể gửi lệnh bật đèn!";
+                });
     }
 
     document.getElementById('turnOffLedBtn').onclick = function () {
         fetch('/turn_off_led', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh tắt đèn!";
-            })
-            .catch(() => {
-                document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
-            });
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.msg || "Đã gửi lệnh tắt đèn!";
+                })
+                .catch(() => {
+                    document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
+                });
     }
 
     document.getElementById('turnOnUVABtn').onclick = function () {
         fetch('/turn_on_uva', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh bật đèn!";
-            })
-            .catch(() => {
-                document.getElementById('status').innerText = "Không thể gửi lệnh bật đèn!";
-            });
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.msg || "Đã gửi lệnh bật đèn!";
+                })
+                .catch(() => {
+                    document.getElementById('status').innerText = "Không thể gửi lệnh bật đèn!";
+                });
     }
 
     document.getElementById('turnOffUVABtn').onclick = function () {
         fetch('/turn_off_uva', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.msg || "Đã gửi lệnh tắt đèn!";
-            })
-            .catch(() => {
-                document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
-            });
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status').innerText = data.msg || "Đã gửi lệnh tắt đèn!";
+                })
+                .catch(() => {
+                    document.getElementById('status').innerText = "Không thể gửi lệnh tắt đèn!";
+                });
     }
 
 
@@ -633,12 +640,12 @@
     // Lấy threshold từ config khi load trang và khi mở tab Nhận diện
     function loadThresholdConfig() {
         fetch('/get_config')
-            .then(r => r.json())
-            .then(cfg => {
-                console.log(cfg)
-                if (cfg.ddos) insectThreshold = parseInt(cfg.ddos);
-                console.log(cfg.ddos)
-            });
+                .then(r => r.json())
+                .then(cfg => {
+                    console.log(cfg)
+                    if (cfg.ddos) insectThreshold = parseInt(cfg.ddos);
+                    console.log(cfg.ddos)
+                });
     }
 
     document.addEventListener('DOMContentLoaded', loadThresholdConfig);
@@ -697,21 +704,21 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             })
-                .then(r => r.json())
-                .then(resp => {
-                    if (resp.status === "ok") {
-                        document.getElementById('autoOnOffStatus').innerText = "Đã gửi thành công!";
-                        document.getElementById('autoOnOffStatus').className = "ms-2 text-success";
-                        form.reset();
-                    } else {
-                        document.getElementById('autoOnOffStatus').innerText = "Gửi thất bại: " + resp.msg;
+                    .then(r => r.json())
+                    .then(resp => {
+                        if (resp.status === "ok") {
+                            document.getElementById('autoOnOffStatus').innerText = "Đã gửi thành công!";
+                            document.getElementById('autoOnOffStatus').className = "ms-2 text-success";
+                            form.reset();
+                        } else {
+                            document.getElementById('autoOnOffStatus').innerText = "Gửi thất bại: " + resp.msg;
+                            document.getElementById('autoOnOffStatus').className = "ms-2 text-danger";
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('autoOnOffStatus').innerText = "Lỗi kết nối API!";
                         document.getElementById('autoOnOffStatus').className = "ms-2 text-danger";
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('autoOnOffStatus').innerText = "Lỗi kết nối API!";
-                    document.getElementById('autoOnOffStatus').className = "ms-2 text-danger";
-                });
+                    });
         };
     });
 
@@ -720,13 +727,13 @@
 
     function loadScheduleList() {
         fetch('/list_schedule')
-            .then(res => res.json())
-            .then(list => {
-                const tbody = document.querySelector('#scheduleList tbody');
-                tbody.innerHTML = "";
-                if (Array.isArray(list) && list.length > 0) {
-                    list.forEach((item, idx) => {
-                        tbody.innerHTML += `
+                .then(res => res.json())
+                .then(list => {
+                    const tbody = document.querySelector('#scheduleList tbody');
+                    tbody.innerHTML = "";
+                    if (Array.isArray(list) && list.length > 0) {
+                        list.forEach((item, idx) => {
+                            tbody.innerHTML += `
                         <tr>
                             <td>${idx + 1}</td>
                             <td>
@@ -737,11 +744,11 @@
                             <td>${item.time}</td>
                         </tr>
                     `;
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Không có lịch nào!</td></tr>`;
-                }
-            });
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Không có lịch nào!</td></tr>`;
+                    }
+                });
     }
 </script>
 </body>

@@ -439,7 +439,8 @@ def save_config_api():
         speed = int(data.get("speed", 255))
         time_ = int(data.get("time", 1000))
         ddos = int(data.get("ddos", 5))
-        cfg = {"speed": speed, "time": time_, "ddos": ddos}
+        time_action = int(data.get("time_action", 1000))
+        cfg = {"speed": speed, "time": time_, "ddos": ddos, "time_action": time_action}  # <-- thêm time_action
         save_config(cfg)
         return jsonify({"status": "ok", "msg": "Đã lưu cấu hình!"})
     except Exception as e:
