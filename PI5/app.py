@@ -351,14 +351,14 @@ def camera_stream():
     global detection_running
 
     def gen():
-        global detection_running  # Cần để gán biến toàn cục
+        global detection_running, detection_thread
         while True:
             frame = get_latest_frame()
             if frame is not None:
                 vis_frame = frame.copy()
                 h, w = vis_frame.shape[:2]
 
-                # --- Vùng nhỏ: 30% bên phải, cao 60% ở giữa ---
+                # --- Vùng nhỏ: 30% bên phải, cao 52% ở giữa ---
                 x1 = int(w * 0.7)
                 x2 = w
                 y1 = int(h * 0.28)
@@ -380,7 +380,6 @@ def camera_stream():
                             continue
                         motion = True
                         (x, y, w_box, h_box) = cv2.boundingRect(c)
-                        # Chuyển tọa độ từ ROI sang ảnh gốc
                         cv2.rectangle(vis_frame, (x1 + x, y1 + y), (x1 + x + w_box, y1 + y + h_box), (0,0,255), 2)
 
                 # Vẽ khung vùng quan sát
@@ -388,12 +387,22 @@ def camera_stream():
                 if motion:
                     cv2.putText(vis_frame, "Co chuyen dong!", (x1+10, y1+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
-                    # --- LOCK: chỉ trigger khi chưa running ---
-                    if detection_running:
-                        global detection_thread
-                        detection_thread = threading.Thread(target=continuous_detect, daemon=True)
-                        detection_thread.start()
-                        print(">>> Trigger NHẬN DIỆN hoặc hành động ở đây <<<")
+                    # --- Check object trong vùng chuyển động ---
+                    # Chỉ kiểm tra khi chưa running
+                    if not detection_running:
+                        # Nhận diện object trong vùng ROI (dùng model YOLO)
+                        results = model(roi)
+                        has_object = False
+                        if results and hasattr(results[0], 'boxes') and results[0].boxes is not None:
+                            if len(results[0].boxes) > 0:
+                                has_object = True
+                        if has_object:
+                            detection_running = True
+                            detection_thread = threading.Thread(target=continuous_detect, daemon=True)
+                            detection_thread.start()
+                            print(">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động) <<<")
+                        else:
+                            print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
 
                 prev_frame[0] = frame.copy()
 
