@@ -366,7 +366,7 @@ motion_lock = threading.Lock()
 @app.route('/camera_stream')
 def camera_stream():
     prev_frame = [None]
-    global detection_running
+    global detection_running, detection_thread
 
     def gen():
         global detection_running, detection_thread
@@ -405,21 +405,25 @@ def camera_stream():
                 if motion:
                     cv2.putText(vis_frame, "Co chuyen dong!", (x1+10, y1+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
-                    # --- Check object trong vùng chuyển động ---
-                    # Chỉ kiểm tra khi chưa running
+                    # --- ĐÚNG LOGIC: chỉ tạo thread nếu chưa có thread nhận diện đang chạy ---
                     if detection_running:
-                        # Nhận diện object trong vùng ROI (dùng model YOLO)
-                        results = model(roi)
-                        has_object = False
-                        if results and hasattr(results[0], 'boxes') and results[0].boxes is not None:
-                            if len(results[0].boxes) > 0:
-                                has_object = True
-                        if has_object:
-                            detection_thread = threading.Thread(target=continuous_detect, daemon=True)
-                            detection_thread.start()
-                            print(">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động) <<<")
+                        if detection_thread is None or not detection_thread.is_alive():
+                            # Nhận diện object trong vùng ROI (dùng model YOLO)
+                            results = model(roi)
+                            has_object = False
+                            if results and hasattr(results[0], 'boxes') and results[0].boxes is not None:
+                                if len(results[0].boxes) > 0:
+                                    has_object = True
+                            if has_object:
+                                detection_thread = threading.Thread(target=continuous_detect, daemon=True)
+                                detection_thread.start()
+                                print(">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động) <<<")
+                            else:
+                                print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
                         else:
-                            print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
+                            print(">>> Thread nhận diện đang chạy, không tạo mới <<<")
+                    else:
+                        print(">>> detection_running=False, không tạo thread <<<")
 
                 prev_frame[0] = frame.copy()
 
