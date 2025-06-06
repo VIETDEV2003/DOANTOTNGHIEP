@@ -401,39 +401,46 @@ def camera_stream():
                         cv2.rectangle(vis_frame, (x1 + x, y1 + y), (x1 + x + w_box, y1 + y + h_box), (0,0,255), 2)
 
                 # Vẽ khung vùng quan sát
-                cv2.rectangle(vis_frame, (x1, y1), (x2, y2), (0,0,255), 2)
+                cv2.rectangle(vis_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 if motion:
-                    cv2.putText(vis_frame, "Co chuyen dong!", (x1+10, y1+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                    cv2.putText(vis_frame, "Co chuyen dong!", (x1 + 10, y1 + 40), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (0, 0, 255), 2)
 
-                    # --- ĐÚNG LOGIC: chỉ tạo thread nếu chưa có thread nhận diện đang chạy ---
                     if detection_running:
                         if detection_thread is None or not detection_thread.is_alive():
-                            # Nhận diện object trong vùng ROI (dùng model YOLO)
-                            results = model(roi)
-                            has_object = False
-                            if results and hasattr(results[0], 'boxes') and results[0].boxes is not None:
-                                if len(results[0].boxes) > 0:
-                                    has_object = True
-                            if has_object:
-                                # Liệt kê tên các object nhận diện được
-                                object_names = []
-                                if hasattr(results[0], 'boxes') and hasattr(results[0], 'names'):
-                                    # Nếu model là YOLOv8, YOLOv5...
-                                    for box in results[0].boxes:
-                                        cls_id = int(box.cls[0])
-                                        name = results[0].names[cls_id] if hasattr(results[0], 'names') else str(cls_id)
-                                        object_names.append(name)
-                                elif hasattr(results[0], 'pred'):
-                                    # Một số model dùng results[0].pred (YOLOv5 cũ, Ultralytics)
-                                    for *xyxy, conf, cls_id in results[0].pred[0].cpu().numpy():
-                                        name = results[0].names[int(cls_id)]
-                                        object_names.append(name)
-                                print(
-                                    f">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động): {', '.join(object_names)}")
-                                detection_thread = threading.Thread(target=continuous_detect, daemon=True)
-                                detection_thread.start()
+                            # *** CHỤP 1 FRAME MỚI (frame tĩnh) ***
+                            check_frame = get_latest_frame()
+                            if check_frame is not None:
+                                # Cắt lại ROI trên frame mới này (KHÔNG dùng ROI realtime đang hiển thị)
+                                roi_check = check_frame[y1:y2, x1:x2]
+
+                                # Nhận diện object trong vùng ROI (dùng model YOLO)
+                                results = model(roi_check)
+                                has_object = False
+                                if results and hasattr(results[0], 'boxes') and results[0].boxes is not None:
+                                    if len(results[0].boxes) > 0:
+                                        has_object = True
+                                if has_object:
+                                    # Liệt kê tên các object nhận diện được
+                                    object_names = []
+                                    if hasattr(results[0], 'boxes') and hasattr(results[0], 'names'):
+                                        for box in results[0].boxes:
+                                            cls_id = int(box.cls[0])
+                                            name = results[0].names[cls_id] if hasattr(results[0], 'names') else str(
+                                                cls_id)
+                                            object_names.append(name)
+                                    elif hasattr(results[0], 'pred'):
+                                        for *xyxy, conf, cls_id in results[0].pred[0].cpu().numpy():
+                                            name = results[0].names[int(cls_id)]
+                                            object_names.append(name)
+                                    print(
+                                        f">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động): {', '.join(object_names)}")
+                                    detection_thread = threading.Thread(target=continuous_detect, daemon=True)
+                                    detection_thread.start()
+                                else:
+                                    print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
                             else:
-                                print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
+                                print(">>> Không lấy được frame mới để kiểm tra object <<<")
                         else:
                             print(">>> Thread nhận diện đang chạy, không tạo mới <<<")
                     else:
