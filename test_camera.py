@@ -1,20 +1,18 @@
 import cv2
 import threading
 import time
+from flask import Flask, Response
 
 global_frame = None
 frame_lock = threading.Lock()
-stop_flag = False
 
 def camera_capture_loop(index):
-    global global_frame, stop_flag
+    global global_frame
     cap = cv2.VideoCapture(index)
     if not cap.isOpened():
         print(f"Không mở được camera ở index {index}")
-        stop_flag = True
         return
-    print(f"✅ Đã mở camera ở index {index}")
-    while not stop_flag:
+    while True:
         ret, frame = cap.read()
         if not ret:
             print("Không lấy được frame, dừng thread camera.")
@@ -24,21 +22,22 @@ def camera_capture_loop(index):
         time.sleep(0.03)
     cap.release()
 
-if __name__ == "__main__":
-    camera_index = 0  # Đổi về 1 nếu cần
-    t = threading.Thread(target=camera_capture_loop, args=(camera_index,))
-    t.start()
+app = Flask(__name__)
 
-    while True:
-        with frame_lock:
-            frame = global_frame.copy() if global_frame is not None else None
-        if frame is not None:
-            cv2.imshow('Camera', frame)
-        key = cv2.waitKey(1) & 0xFF
-        # Nhấn q để thoát
-        if key == ord('q'):
-            stop_flag = True
-            break
-        time.sleep(0.01)
-    t.join()
-    cv2.destroyAllWindows()
+@app.route('/video_feed')
+def video_feed():
+    def gen():
+        while True:
+            with frame_lock:
+                frame = global_frame.copy() if global_frame is not None else None
+            if frame is not None:
+                _, buffer = cv2.imencode('.jpg', frame)
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.03)
+    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == "__main__":
+    threading.Thread(target=camera_capture_loop, args=(0,), daemon=True).start()
+    app.run(host='0.0.0.0', port=5000)
