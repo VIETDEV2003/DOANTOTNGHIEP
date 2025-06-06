@@ -392,8 +392,9 @@ def camera_stream():
                     if not detection_running:
                         # Đặt running = True để lock
                         detection_running = True
-                        # Có thể gọi thread nhận diện hoặc gửi trigger tại đây
-                        # threading.Thread(target=your_detect_func).start()
+                        global detection_thread
+                        detection_thread = threading.Thread(target=continuous_detect, daemon=True)
+                        detection_thread.start()
                         print(">>> Trigger NHẬN DIỆN hoặc hành động ở đây <<<")
 
                 # Khi KHÔNG còn chuyển động nữa, unlock
@@ -443,12 +444,10 @@ def process_video():
 
 @app.route('/start_detect', methods=['POST'])
 def start_detect():
-    global detection_thread, detection_running
+    global detection_running
     if detection_running:
         return jsonify({"status": "Đã chạy nhận diện liên tục"}), 200
     detection_running = True
-    detection_thread = threading.Thread(target=continuous_detect, daemon=True)
-    detection_thread.start()
     return jsonify({"status": "Bắt đầu nhận diện liên tục"}), 200
 
 @app.route('/stop_detect', methods=['POST'])
