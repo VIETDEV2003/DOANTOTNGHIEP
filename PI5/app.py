@@ -345,7 +345,7 @@ def turn_on_uva():
 
 motion_lock = threading.Lock()
 
-@@app.route('/camera_stream')
+@app.route('/camera_stream')
 def camera_stream():
     prev_frame = [None]
     global detection_running
