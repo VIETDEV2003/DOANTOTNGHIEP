@@ -13,9 +13,24 @@ import json
 import glob
 from collections import Counter, deque, defaultdict
 
-# --- Camera shared buffer ---
 global_frame = None
 frame_lock = threading.Lock()
+
+def camera_capture_loop(index):
+    global global_frame
+    cap = cv2.VideoCapture(index)
+    if not cap.isOpened():
+        print(f"Không mở được camera ở index {index}")
+        return
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Không lấy được frame, dừng thread camera.")
+            break
+        with frame_lock:
+            global_frame = frame.copy()
+        time.sleep(0.03)
+    cap.release()
 app = Flask(__name__)
 
 model = YOLO('runs/detect/contrung_model/weights/best.pt')
@@ -57,23 +72,6 @@ latest_result = {"image": "", "counts": {}}
 
 # Dữ liệu cảm biến
 sensor_data_buffer = deque(maxlen=200)
-
-def camera_capture_loop(index=0):
-    global global_frame
-    cap = cv2.VideoCapture(index)
-    if not cap.isOpened():
-        print(f"Không mở được camera ở index {index}")
-        return
-    print(f"✅ Đã mở camera ở index {index}")
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Không lấy được frame, dừng thread camera.")
-            break
-        with frame_lock:
-            global_frame = frame.copy()
-        time.sleep(0.03)
-    cap.release()
 
 
 def get_latest_frame():
