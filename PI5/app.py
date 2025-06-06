@@ -251,8 +251,15 @@ def control():
 @app.route('/capture', methods=['POST'])
 def capture():
     config = load_config()
-    send_conveyor_control(speed=config.get("speed",255), time_ms=config.get("time",1000))
-    time.sleep(config.get("time",1000)/1000.0)
+    speed = config.get("speed", 255)
+    time_action = config.get("time_action", 1000)  # Lấy time_action từ config
+    time_after = config.get("time", 1000)          # Lấy time (sau) từ config
+
+    # 1. Điều khiển băng tải chạy time_action trước
+    send_conveyor_control(speed=speed, time_ms=time_action)
+    time.sleep(time_action / 1000.0)
+
+    # 2. Chụp hình
     frame = get_latest_frame()
     if frame is None:
         return jsonify({"error": "Không truy cập được camera"}), 500
@@ -260,6 +267,10 @@ def capture():
     frame, counts = process_frame_with_yolo(frame)
     _, buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(buffer).decode()
+
+    # 3. Điều khiển băng tải chạy tiếp time (sau)
+    send_conveyor_control(speed=speed, time_ms=time_after)
+    time.sleep(time_after / 1000.0)
 
     # Lưu ảnh
     date_str = dt.strftime("%Y-%m-%d")
