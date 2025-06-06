@@ -325,11 +325,44 @@ def turn_on_uva():
 
 @app.route('/camera_stream')
 def camera_stream():
+    prev_frame = [None]  # dùng list để biến này mutable trong closure
+
     def gen():
         while True:
             frame = get_latest_frame()
             if frame is not None:
-                _, buffer = cv2.imencode('.jpg', frame)
+                vis_frame = frame.copy()
+                h, w = vis_frame.shape[:2]
+                # --- CHỌN VÙNG ROI: 30% bên phải ---
+                x_start = int(w * 0.7)
+                x_end = w
+                roi = vis_frame[:, x_start:x_end]
+
+                motion = False
+                if prev_frame[0] is not None:
+                    prev_roi = prev_frame[0][:, x_start:x_end]
+                    diff = cv2.absdiff(roi, prev_roi)
+                    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+                    blur = cv2.GaussianBlur(gray, (5,5), 0)
+                    _, thresh = cv2.threshold(blur, 20, 255, cv2.THRESH_BINARY)
+                    dilated = cv2.dilate(thresh, None, iterations=3)
+                    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                    for c in contours:
+                        if cv2.contourArea(c) < 500:
+                            continue
+                        motion = True
+                        (x, y, w_box, h_box) = cv2.boundingRect(c)
+                        cv2.rectangle(vis_frame, (x_start + x, y), (x_start + x + w_box, y + h_box), (0,0,255), 2)
+
+                # Vẽ khung vùng ROI
+                cv2.rectangle(vis_frame, (x_start, 0), (x_end, h), (0,0,255), 2)
+                if motion:
+                    cv2.putText(vis_frame, "Co con trung!", (x_start+10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+
+                prev_frame[0] = frame.copy()
+
+                _, buffer = cv2.imencode('.jpg', vis_frame)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
