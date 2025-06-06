@@ -18,6 +18,13 @@
             display: flex;
             min-height: 100vh;
         }
+        .top-right {
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              width: 150px;
+              z-index: 1000;
+        }
 
         .sidebar {
             background: #183153;
@@ -136,6 +143,11 @@
             </li>
         </ul>
     </nav>
+    <!-- Logo góc trên trái -->
+    <div style="position: absolute; top: 10px; left: 10px; z-index: 999;">
+        <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/edit/master/PI5/templates/logo.jpg" alt="Logo" style="height: 50px;">
+    </div>
+
     <!-- Main content -->
     <div class="content-area">
         <div class="tab-pane" id="tab-cam-bien">
@@ -145,6 +157,7 @@
                     <canvas id="sensorChart" height="120"></canvas>
                     <div id="sensorStatus" class="text-center mt-2 text-muted"></div>
                 </div>
+                
                 <div class="col-md-3">
                     <div class="card text-center border-success shadow">
                         <div class="card-header bg-success text-white">
