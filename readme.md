@@ -9,5 +9,5 @@ sudo chmod 777 run.sh && ./run.sh
 
 # Sử dụng
 
-- Mở trình duyệt web và truy cập vào địa chỉ `http://localhost:5000` hoặc `http://pi.local:5000`
+- Mở trình duyệt web và truy cập vào địa chỉ `http://192.168.31.124:5000` hoặc `http://pi.local:5000`
 
