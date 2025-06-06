@@ -114,62 +114,59 @@ def log_detection(dt, counts, image_path, detect_id):
 def continuous_detect():
     global detection_running, latest_result
     detect_id = 1
-    while detection_running:
-        config = load_config()
-        speed = config.get("speed", 255)
-        time_action = config.get("time_action", 1000)  # Lấy time_action (lần 1)
-        time_after = config.get("time", 1000)          # Lấy time (lần 2)
 
-        # 1. Điều khiển băng tải chạy lần 1 (như capture)
-        send_conveyor_control(speed=speed, time_ms=time_action)
-        time.sleep(time_action / 1000.0)
+    config = load_config()
+    speed = config.get("speed", 255)
+    time_action = config.get("time_action", 1000)  # Lấy time_action (lần 1)
+    time_after = config.get("time", 1000)          # Lấy time (lần 2)
 
-        # 2. Lấy frame
-        for _ in range(7):
-            frame = get_latest_frame()
-        if frame is None:
-            print("Không lấy được hình từ camera.")
-            break
+    # 1. Điều khiển băng tải chạy lần 1 (như capture)
+    send_conveyor_control(speed=speed, time_ms=time_action)
+    time.sleep(time_action / 1000.0)
 
-        dt = datetime.now()
-        date_str = dt.strftime("%Y-%m-%d")
-        time_str = dt.strftime("%H-%M-%S")
+    # 2. Lấy frame
+    for _ in range(7):
+        frame = get_latest_frame()
+    if frame is None:
+        print("Không lấy được hình từ camera.")
+        return
 
-        # ---- Lưu ảnh gốc vào thư mục raw ----
-        raw_dir = "raw"
-        os.makedirs(raw_dir, exist_ok=True)
-        raw_image_name = f"raw_{date_str}_{time_str}_{detect_id}.jpg"
-        raw_image_path = os.path.join(raw_dir, raw_image_name)
-        cv2.imwrite(raw_image_path, frame)
+    dt = datetime.now()
+    date_str = dt.strftime("%Y-%m-%d")
+    time_str = dt.strftime("%H-%M-%S")
 
-        # ---- Nhận diện ----
-        frame_draw, counts = process_frame_with_yolo(frame)
+    # ---- Lưu ảnh gốc vào thư mục raw ----
+    raw_dir = "raw"
+    os.makedirs(raw_dir, exist_ok=True)
+    raw_image_name = f"raw_{date_str}_{time_str}_{detect_id}.jpg"
+    raw_image_path = os.path.join(raw_dir, raw_image_name)
+    cv2.imwrite(raw_image_path, frame)
 
-        # 3. Điều khiển băng tải chạy lần 2 (sau khi nhận diện)
-        send_conveyor_control(speed=speed, time_ms=time_after)
-        time.sleep(time_after / 1000.0)
+    # ---- Nhận diện ----
+    frame_draw, counts = process_frame_with_yolo(frame)
 
-        # 4. Lưu ảnh đã nhận diện
-        image_name = f"detect_{date_str}_{time_str}_{detect_id}.jpg"
-        image_path = os.path.join(CAPTURE_DIR, image_name)
-        cv2.imwrite(image_path, frame_draw)
+    # 3. Điều khiển băng tải chạy lần 2 (sau khi nhận diện)
+    send_conveyor_control(speed=speed, time_ms=time_after)
+    time.sleep(time_after / 1000.0)
 
-        # 5. Encode ảnh base64 cho web
-        _, buffer = cv2.imencode('.jpg', frame_draw)
-        img_base64 = base64.b64encode(buffer).decode()
+    # 4. Lưu ảnh đã nhận diện
+    image_name = f"detect_{date_str}_{time_str}_{detect_id}.jpg"
+    image_path = os.path.join(CAPTURE_DIR, image_name)
+    cv2.imwrite(image_path, frame_draw)
 
-        # 6. Cập nhật kết quả mới nhất cho web
-        latest_result = {"image": img_base64, "counts": dict(counts)}
+    # 5. Encode ảnh base64 cho web
+    _, buffer = cv2.imencode('.jpg', frame_draw)
+    img_base64 = base64.b64encode(buffer).decode()
 
-        # 7. Ghi log
-        log_detection(dt, counts, image_path, detect_id)
+    # 6. Cập nhật kết quả mới nhất cho web
+    latest_result = {"image": img_base64, "counts": dict(counts)}
 
-        print(f"Lần {detect_id} | {dt.strftime('%H:%M:%S')} | Tổng: {sum(counts.values())} | {dict(counts)}")
+    # 7. Ghi log
+    log_detection(dt, counts, image_path, detect_id)
 
-        detect_id += 1
-        time.sleep(1)  # Delay giữa các lần nhận diện
+    print(f"Lần {detect_id} | {dt.strftime('%H:%M:%S')} | Tổng: {sum(counts.values())} | {dict(counts)}")
 
-    print("Dừng nhận diện liên tục.")
+    print("Nhận diện xong 1 lần, dừng.")
 
 # --- MQTT Sensor subscriber thread ---
 def on_sensor_message(client, userdata, msg):
