@@ -453,4 +453,4 @@ def list_schedule():
 if __name__ == '__main__':
     # Khởi động thread đọc camera khi server start
     threading.Thread(target=camera_capture_loop, args=(0,), daemon=True).start()
-    app.run(debug=True, host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)
