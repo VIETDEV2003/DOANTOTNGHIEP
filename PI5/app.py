@@ -407,7 +407,7 @@ def camera_stream():
 
                     # --- Check object trong vùng chuyển động ---
                     # Chỉ kiểm tra khi chưa running
-                    if not detection_running:
+                    if detection_running:
                         # Nhận diện object trong vùng ROI (dùng model YOLO)
                         results = model(roi)
                         has_object = False
@@ -415,7 +415,6 @@ def camera_stream():
                             if len(results[0].boxes) > 0:
                                 has_object = True
                         if has_object:
-                            detection_running = True
                             detection_thread = threading.Thread(target=continuous_detect, daemon=True)
                             detection_thread.start()
                             print(">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động) <<<")
