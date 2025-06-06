@@ -333,14 +333,14 @@ def camera_stream():
             if frame is not None:
                 vis_frame = frame.copy()
                 h, w = vis_frame.shape[:2]
-                # --- CHỌN VÙNG ROI: 30% bên phải ---
-                x_start = int(w * 0.7)
-                x_end = w
-                roi = vis_frame[:, x_start:x_end]
+                # --- CHỌN VÙNG ROI: 50% giữa theo chiều dọc ---
+                y_start = int(h * 0.25)
+                y_end = int(h * 0.75)
+                roi = vis_frame[y_start:y_end, :]
 
                 motion = False
                 if prev_frame[0] is not None:
-                    prev_roi = prev_frame[0][:, x_start:x_end]
+                    prev_roi = prev_frame[0][y_start:y_end, :]
                     diff = cv2.absdiff(roi, prev_roi)
                     gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
                     blur = cv2.GaussianBlur(gray, (5,5), 0)
@@ -353,12 +353,13 @@ def camera_stream():
                             continue
                         motion = True
                         (x, y, w_box, h_box) = cv2.boundingRect(c)
-                        cv2.rectangle(vis_frame, (x_start + x, y), (x_start + x + w_box, y + h_box), (0,0,255), 2)
+                        # Vẽ khung đỏ quanh chuyển động, cần cộng y_start vào y
+                        cv2.rectangle(vis_frame, (x, y_start + y), (x + w_box, y_start + y + h_box), (0,0,255), 2)
 
                 # Vẽ khung vùng ROI
-                cv2.rectangle(vis_frame, (x_start, 0), (x_end, h), (0,0,255), 2)
+                cv2.rectangle(vis_frame, (0, y_start), (w, y_end), (0,0,255), 2)
                 if motion:
-                    cv2.putText(vis_frame, "Co con trung!", (x_start+10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                    cv2.putText(vis_frame, "Co con trung!", (10, y_start+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
                 prev_frame[0] = frame.copy()
 
