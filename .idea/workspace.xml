@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f082fe28-00c3-432c-8056-4607a82b5d19" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/test_camera.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_camera.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/con_trung.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/con_trung.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,7 +31,7 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Mai Hieu/Desktop/FREELANCER/con_trung&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Mai Hieu/Desktop/FREELANCER/thuy_canh&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -56,7 +57,11 @@
       <option name="presentableId" value="Default" />
       <updated>1748940721608</updated>
       <workItem from="1748940721836" duration="305000" />
-      <workItem from="1748941032354" duration="4659000" />
+      <workItem from="1748941032354" duration="5022000" />
+      <workItem from="1748958086381" duration="1027000" />
+      <workItem from="1748967387551" duration="19000" />
+      <workItem from="1749010056201" duration="22000" />
+      <workItem from="1749194708191" duration="73000" />
     </task>
     <servers />
   </component>

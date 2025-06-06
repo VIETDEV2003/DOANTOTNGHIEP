@@ -52,7 +52,6 @@ def save_config(cfg):
 # Toàn cục cho nhận diện liên tục
 detection_thread = None
 detection_running = False
-
 # Kết quả nhận diện liên tục mới nhất (cho frontend lấy về hiển thị)
 latest_result = {"image": "", "counts": {}}
 
