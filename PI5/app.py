@@ -435,8 +435,8 @@ def camera_stream():
                                             object_names.append(name)
                                     print(
                                         f">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động): {', '.join(object_names)}")
-                                    # detection_thread = threading.Thread(target=continuous_detect, daemon=True)
-                                    # detection_thread.start()
+                                    detection_thread = threading.Thread(target=continuous_detect, daemon=True)
+                                    detection_thread.start()
                                 else:
                                     print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
                             else:
