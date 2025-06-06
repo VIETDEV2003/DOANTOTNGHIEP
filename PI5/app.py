@@ -389,17 +389,11 @@ def camera_stream():
                     cv2.putText(vis_frame, "Co chuyen dong!", (x1+10, y1+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
                     # --- LOCK: chỉ trigger khi chưa running ---
-                    if not detection_running:
-                        # Đặt running = True để lock
-                        detection_running = True
+                    if detection_running:
                         global detection_thread
                         detection_thread = threading.Thread(target=continuous_detect, daemon=True)
                         detection_thread.start()
                         print(">>> Trigger NHẬN DIỆN hoặc hành động ở đây <<<")
-
-                # Khi KHÔNG còn chuyển động nữa, unlock
-                if not motion and detection_running:
-                    detection_running = False
 
                 prev_frame[0] = frame.copy()
 
