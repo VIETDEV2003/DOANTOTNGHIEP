@@ -61,7 +61,7 @@ sensor_data_buffer = deque(maxlen=200)
 def camera_capture_loop():
     global global_frame
     while True:
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             print("Không thể mở camera. Thử lại sau 5s...")
             time.sleep(5)
