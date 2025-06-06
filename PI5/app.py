@@ -124,7 +124,7 @@ def continuous_detect():
         send_conveyor_control(speed=speed, time_ms=time_action)
         time.sleep(time_action / 1000.0)
 
-        # 2. Lấy frame và nhận diện
+        # 2. Lấy frame
         for _ in range(7):
             frame = get_latest_frame()
         if frame is None:
@@ -132,15 +132,24 @@ def continuous_detect():
             break
 
         dt = datetime.now()
+        date_str = dt.strftime("%Y-%m-%d")
+        time_str = dt.strftime("%H-%M-%S")
+
+        # ---- Lưu ảnh gốc vào thư mục raw ----
+        raw_dir = "raw"
+        os.makedirs(raw_dir, exist_ok=True)
+        raw_image_name = f"raw_{date_str}_{time_str}_{detect_id}.jpg"
+        raw_image_path = os.path.join(raw_dir, raw_image_name)
+        cv2.imwrite(raw_image_path, frame)
+
+        # ---- Nhận diện ----
         frame_draw, counts = process_frame_with_yolo(frame)
 
         # 3. Điều khiển băng tải chạy lần 2 (sau khi nhận diện)
         send_conveyor_control(speed=speed, time_ms=time_after)
         time.sleep(time_after / 1000.0)
 
-        # 4. Lưu ảnh
-        date_str = dt.strftime("%Y-%m-%d")
-        time_str = dt.strftime("%H-%M-%S")
+        # 4. Lưu ảnh đã nhận diện
         image_name = f"detect_{date_str}_{time_str}_{detect_id}.jpg"
         image_path = os.path.join(CAPTURE_DIR, image_name)
         cv2.imwrite(image_path, frame_draw)
@@ -261,8 +270,8 @@ def control():
 def capture():
     config = load_config()
     speed = config.get("speed", 255)
-    time_action = config.get("time_action", 1000)  # Lấy time_action từ config
-    time_after = config.get("time", 1000)          # Lấy time (sau) từ config
+    time_action = config.get("time_action", 1000)
+    time_after = config.get("time", 1000)
 
     # 1. Điều khiển băng tải chạy time_action trước
     send_conveyor_control(speed=speed, time_ms=time_action)
@@ -273,6 +282,17 @@ def capture():
     if frame is None:
         return jsonify({"error": "Không truy cập được camera"}), 500
     dt = datetime.now()
+    date_str = dt.strftime("%Y-%m-%d")
+    time_str = dt.strftime("%H-%M-%S")
+
+    # ---- Lưu ảnh gốc vào thư mục raw ----
+    raw_dir = "raw"
+    os.makedirs(raw_dir, exist_ok=True)
+    raw_image_name = f"raw_{date_str}_{time_str}_capture.jpg"
+    raw_image_path = os.path.join(raw_dir, raw_image_name)
+    cv2.imwrite(raw_image_path, frame)
+
+    # ---- Nhận diện ----
     frame, counts = process_frame_with_yolo(frame)
     _, buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(buffer).decode()
@@ -281,9 +301,7 @@ def capture():
     send_conveyor_control(speed=speed, time_ms=time_after)
     time.sleep(time_after / 1000.0)
 
-    # Lưu ảnh
-    date_str = dt.strftime("%Y-%m-%d")
-    time_str = dt.strftime("%H-%M-%S")
+    # Lưu ảnh đã nhận diện
     image_name = f"detect_{date_str}_{time_str}_capture.jpg"
     image_path = os.path.join(CAPTURE_DIR, image_name)
     cv2.imwrite(image_path, frame)
