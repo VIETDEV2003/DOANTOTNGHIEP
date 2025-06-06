@@ -415,9 +415,23 @@ def camera_stream():
                                 if len(results[0].boxes) > 0:
                                     has_object = True
                             if has_object:
+                                # Liệt kê tên các object nhận diện được
+                                object_names = []
+                                if hasattr(results[0], 'boxes') and hasattr(results[0], 'names'):
+                                    # Nếu model là YOLOv8, YOLOv5...
+                                    for box in results[0].boxes:
+                                        cls_id = int(box.cls[0])
+                                        name = results[0].names[cls_id] if hasattr(results[0], 'names') else str(cls_id)
+                                        object_names.append(name)
+                                elif hasattr(results[0], 'pred'):
+                                    # Một số model dùng results[0].pred (YOLOv5 cũ, Ultralytics)
+                                    for *xyxy, conf, cls_id in results[0].pred[0].cpu().numpy():
+                                        name = results[0].names[int(cls_id)]
+                                        object_names.append(name)
+                                print(
+                                    f">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động): {', '.join(object_names)}")
                                 detection_thread = threading.Thread(target=continuous_detect, daemon=True)
                                 detection_thread.start()
-                                print(">>> Trigger NHẬN DIỆN (có object trong vùng chuyển động) <<<")
                             else:
                                 print(">>> Chuyển động nhưng KHÔNG có object (bỏ qua) <<<")
                         else:
