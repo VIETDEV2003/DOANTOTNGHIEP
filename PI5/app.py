@@ -325,7 +325,7 @@ def turn_on_uva():
 
 @app.route('/camera_stream')
 def camera_stream():
-    prev_frame = [None]  # dùng list để biến này mutable trong closure
+    prev_frame = [None]
 
     def gen():
         while True:
@@ -333,33 +333,60 @@ def camera_stream():
             if frame is not None:
                 vis_frame = frame.copy()
                 h, w = vis_frame.shape[:2]
-                # --- CHỌN VÙNG ROI: 50% giữa theo chiều dọc ---
-                y_start = int(h * 0.25)
-                y_end = int(h * 0.75)
-                roi = vis_frame[y_start:y_end, :]
 
-                motion = False
+                # --- Vùng 30% bên phải (theo chiều ngang) ---
+                x1_right = int(w * 0.7)
+                x2_right = w
+                roi_right = vis_frame[:, x1_right:x2_right]
+
+                # --- Vùng 50% giữa (theo chiều dọc) ---
+                y1_center = int(h * 0.20)
+                y2_center = int(h * 0.80)
+                roi_center = vis_frame[y1_center:y2_center, :]
+
+                motion_right = False
+                motion_center = False
+
                 if prev_frame[0] is not None:
-                    prev_roi = prev_frame[0][y_start:y_end, :]
-                    diff = cv2.absdiff(roi, prev_roi)
-                    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-                    blur = cv2.GaussianBlur(gray, (5,5), 0)
-                    _, thresh = cv2.threshold(blur, 20, 255, cv2.THRESH_BINARY)
-                    dilated = cv2.dilate(thresh, None, iterations=3)
-                    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-                    for c in contours:
+                    # --- Phát hiện chuyển động vùng phải ---
+                    prev_roi_right = prev_frame[0][:, x1_right:x2_right]
+                    diff_right = cv2.absdiff(roi_right, prev_roi_right)
+                    gray_right = cv2.cvtColor(diff_right, cv2.COLOR_BGR2GRAY)
+                    blur_right = cv2.GaussianBlur(gray_right, (5,5), 0)
+                    _, thresh_right = cv2.threshold(blur_right, 20, 255, cv2.THRESH_BINARY)
+                    dilated_right = cv2.dilate(thresh_right, None, iterations=3)
+                    contours_right, _ = cv2.findContours(dilated_right, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    for c in contours_right:
                         if cv2.contourArea(c) < 500:
                             continue
-                        motion = True
+                        motion_right = True
                         (x, y, w_box, h_box) = cv2.boundingRect(c)
-                        # Vẽ khung đỏ quanh chuyển động, cần cộng y_start vào y
-                        cv2.rectangle(vis_frame, (x, y_start + y), (x + w_box, y_start + y + h_box), (0,0,255), 2)
+                        cv2.rectangle(vis_frame, (x1_right + x, y), (x1_right + x + w_box, y + h_box), (0,0,255), 2)
 
-                # Vẽ khung vùng ROI
-                cv2.rectangle(vis_frame, (0, y_start), (w, y_end), (0,0,255), 2)
-                if motion:
-                    cv2.putText(vis_frame, "Co con trung!", (10, y_start+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                    # --- Phát hiện chuyển động vùng giữa dọc ---
+                    prev_roi_center = prev_frame[0][y1_center:y2_center, :]
+                    diff_center = cv2.absdiff(roi_center, prev_roi_center)
+                    gray_center = cv2.cvtColor(diff_center, cv2.COLOR_BGR2GRAY)
+                    blur_center = cv2.GaussianBlur(gray_center, (5,5), 0)
+                    _, thresh_center = cv2.threshold(blur_center, 20, 255, cv2.THRESH_BINARY)
+                    dilated_center = cv2.dilate(thresh_center, None, iterations=3)
+                    contours_center, _ = cv2.findContours(dilated_center, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    for c in contours_center:
+                        if cv2.contourArea(c) < 500:
+                            continue
+                        motion_center = True
+                        (x, y, w_box, h_box) = cv2.boundingRect(c)
+                        cv2.rectangle(vis_frame, (x, y1_center + y), (x + w_box, y1_center + y + h_box), (0,0,255), 2)
+
+                # Vẽ khung vùng 30% bên phải
+                cv2.rectangle(vis_frame, (x1_right, 0), (x2_right, h), (0,0,255), 2)
+                # Vẽ khung vùng 50% giữa dọc
+                cv2.rectangle(vis_frame, (0, y1_center), (w, y2_center), (0,0,255), 2)
+
+                if motion_right:
+                    cv2.putText(vis_frame, "Co chuyen dong (RIGHT)!", (x1_right+10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                if motion_center:
+                    cv2.putText(vis_frame, "Co chuyen dong (CENTER)!", (10, y1_center+40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
                 prev_frame[0] = frame.copy()
 
