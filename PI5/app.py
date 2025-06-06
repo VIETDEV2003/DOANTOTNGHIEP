@@ -44,7 +44,6 @@ MQTT_TOPIC = "doan/contrung/control"
 SENSOR_TOPIC = "doan/contrung/sensor"
 MQTT_SCHEDULE_RESP = "doan/contrung/schedule"
 
-
 # Thư mục lưu ảnh và log
 CAPTURE_DIR = "captures"
 LOG_DIR = "logs"
