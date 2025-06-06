@@ -361,7 +361,7 @@ def camera_stream():
                 # --- Vùng nhỏ: 30% bên phải, cao 60% ở giữa ---
                 x1 = int(w * 0.7)
                 x2 = w
-                y1 = int(h * 0.25)
+                y1 = int(h * 0.28)
                 y2 = int(h * 0.8)
                 roi = vis_frame[y1:y2, x1:x2]
 
