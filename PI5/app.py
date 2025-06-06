@@ -115,10 +115,16 @@ def continuous_detect():
     global detection_running, latest_result
     detect_id = 1
     while detection_running:
-        config = load_config()  # lấy lại config mới nhất
-        send_conveyor_control(speed=config.get("speed", 255), time_ms=config.get("time", 1000))
-        time.sleep(config.get("time", 1000) / 1000.0)
+        config = load_config()
+        speed = config.get("speed", 255)
+        time_action = config.get("time_action", 1000)  # Lấy time_action (lần 1)
+        time_after = config.get("time", 1000)          # Lấy time (lần 2)
 
+        # 1. Điều khiển băng tải chạy lần 1 (như capture)
+        send_conveyor_control(speed=speed, time_ms=time_action)
+        time.sleep(time_action / 1000.0)
+
+        # 2. Lấy frame và nhận diện
         for _ in range(7):
             frame = get_latest_frame()
         if frame is None:
@@ -128,21 +134,25 @@ def continuous_detect():
         dt = datetime.now()
         frame_draw, counts = process_frame_with_yolo(frame)
 
-        # Lưu ảnh
+        # 3. Điều khiển băng tải chạy lần 2 (sau khi nhận diện)
+        send_conveyor_control(speed=speed, time_ms=time_after)
+        time.sleep(time_after / 1000.0)
+
+        # 4. Lưu ảnh
         date_str = dt.strftime("%Y-%m-%d")
         time_str = dt.strftime("%H-%M-%S")
         image_name = f"detect_{date_str}_{time_str}_{detect_id}.jpg"
         image_path = os.path.join(CAPTURE_DIR, image_name)
         cv2.imwrite(image_path, frame_draw)
 
-        # Encode ảnh base64 cho web
+        # 5. Encode ảnh base64 cho web
         _, buffer = cv2.imencode('.jpg', frame_draw)
         img_base64 = base64.b64encode(buffer).decode()
 
-        # Cập nhật kết quả mới nhất cho web
+        # 6. Cập nhật kết quả mới nhất cho web
         latest_result = {"image": img_base64, "counts": dict(counts)}
 
-        # Ghi log
+        # 7. Ghi log
         log_detection(dt, counts, image_path, detect_id)
 
         print(f"Lần {detect_id} | {dt.strftime('%H:%M:%S')} | Tổng: {sum(counts.values())} | {dict(counts)}")
@@ -150,7 +160,6 @@ def continuous_detect():
         detect_id += 1
         time.sleep(1)  # Delay giữa các lần nhận diện
 
-    cap.release()
     print("Dừng nhận diện liên tục.")
 
 # --- MQTT Sensor subscriber thread ---
