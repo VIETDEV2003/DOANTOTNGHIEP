@@ -147,7 +147,17 @@
     <!-- Main content -->
     <div class="content-area">
         <div class="tab-pane" id="tab-cam-bien">
-            <h2 class="mb-4 text-center">Cảm biến</h2>
+            <div class="position-relative mb-5" style="height: 60px;">
+                <div class="position-absolute start-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/logo3.jpg?raw=true" alt="Logo trái" style="width: 50%; height: auto;">
+                </div>
+                <h2 class="position-absolute top-50 start-50 translate-middle m-0" style="font-weight: bold;">
+                    Cảm biến
+                </h2>
+                <div class="position-absolute end-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/Logo-IoTVisionc-01.jpg?raw=true" alt="Logo phải" style="height: 80px;">
+                </div>
+            </div>
             <div class="row justify-content-center">
                 <div class="col-md-7">
                     <canvas id="sensorChart" height="120"></canvas>
@@ -169,20 +179,26 @@
         </div>
         <!-- Tab Nhận diện -->
         <div class="tab-pane active" id="tab-nhan-dien">
-            <h2 class="mb-4 text-center">Nhận diện côn trùng</h2>
+            <div class="position-relative mb-5" style="height: 60px;">
+                <div class="position-absolute start-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/logo3.jpg?raw=true" alt="Logo trái" style="width: 50%; height: auto;">
+                </div>
+                <h2 class="position-absolute top-50 start-50 translate-middle m-0" style="font-weight: bold;">
+                    Nhận diện
+                </h2>
+                <div class="position-absolute end-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/Logo-IoTVisionc-01.jpg?raw=true" alt="Logo phải" style="height: 80px;">
+                </div>
+            </div>
             <div class="text-center mb-3">
                 <span id="clock"></span>
             </div>
-            <div class="text-center btn-group">
+            <div class="d-flex justify-content-center flex-wrap gap-2 my-4">
                 <button id="captureBtn" class="btn btn-primary">Chụp ảnh nhận diện</button>
                 <button id="startDetectBtn" class="btn btn-success">Nhận diện liên tục</button>
-                <button id="stopDetectBtn" class="btn btn-danger">Dừng liên tục</button>
-            </div>
-            <div class="text-center btn-group">
+                <button id="stopDetectBtn" class="btn btn-danger">Dừng nhận diện liên tục</button>
                 <button id="turnOnLedBtn" class="btn btn-warning">Bật đèn UVA</button>
                 <button id="turnOffLedBtn" class="btn btn-secondary">Tắt đèn UVA</button>
-            </div>
-            <div class="text-center btn-group">
                 <button id="turnOnUVABtn" class="btn btn-warning">Bật đèn LED</button>
                 <button id="turnOffUVABtn" class="btn btn-secondary">Tắt đèn LED</button>
             </div>
@@ -219,7 +235,17 @@
         </div>
         <!-- Tab Thống kê -->
         <div class="tab-pane" id="tab-thong-ke">
-            <h2 class="mb-4 text-center">Thống kê côn trùng</h2>
+            <div class="position-relative mb-5" style="height: 60px;">
+                <div class="position-absolute start-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/logo3.jpg?raw=true" alt="Logo trái" style="width: 50%; height: auto;">
+                </div>
+                <h2 class="position-absolute top-50 start-50 translate-middle m-0" style="font-weight: bold;">
+                    Thống kê 
+                </h2>
+                <div class="position-absolute end-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/Logo-IoTVisionc-01.jpg?raw=true" alt="Logo phải" style="height: 80px;">
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-12">
                     <canvas id="statChart" height="150"></canvas>
@@ -229,7 +255,17 @@
         </div>
         <!-- Tab Tự động -->
         <div class="tab-pane" id="tab-tu-dong">
-            <h2 class="mb-4 text-center">Tự động</h2>
+            <div class="position-relative mb-5" style="height: 60px;">
+                <div class="position-absolute start-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/logo3.jpg?raw=true" alt="Logo trái" style="width: 50%; height: auto;">
+                </div>
+                <h2 class="position-absolute top-50 start-50 translate-middle m-0" style="font-weight: bold;">
+                    Tự động
+                </h2>
+                <div class="position-absolute end-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/Logo-IoTVisionc-01.jpg?raw=true" alt="Logo phải" style="height: 80px;">
+                </div>
+            </div>
             <div class="row justify-content-center">
                 <div class="col-md-5">
                     <form id="autoOnOffForm" class="border p-3 bg-light mb-3 rounded">
@@ -274,7 +310,17 @@
         </div>
         <!-- Tab Cài đặt -->
         <div class="tab-pane" id="tab-cai-dat">
-            <h2 class="mb-4 text-center">Cài đặt</h2>
+            <div class="position-relative mb-5" style="height: 60px;">
+                <div class="position-absolute start-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/logo3.jpg?raw=true" alt="Logo trái" style="width: 50%; height: auto;">
+                </div>
+                <h2 class="position-absolute top-50 start-50 translate-middle m-0" style="font-weight: bold;">
+                    Cài đặt
+                </h2>
+                <div class="position-absolute end-0 top-0">
+                    <img src="https://github.com/VIETDEV2003/DOANTOTNGHIEP/blob/master/PI5/templates/Logo-IoTVisionc-01.jpg?raw=true" alt="Logo phải" style="height: 80px;">
+                </div>
+            </div>
             <div class="row justify-content-center">
                 <div class="col-md-6">
                     <form id="configForm">
