@@ -281,6 +281,15 @@
                                     tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
                                     return;
                                 }
+                                for (const item of insects) {
+                                    const row = document.createElement('tr');
+                                    row.innerHTML = `
+            <td>${item.class}</td>
+            <td>${item.width_mm} x ${item.height_mm}</td>
+            <td>${item.detected_at}</td>
+        `;
+                                    tbody.appendChild(row);
+                                }
                             }
 
                             function updateStatus(insects) {
@@ -783,24 +792,6 @@
         let toastLive = document.getElementById('insectToast');
         let toast = new bootstrap.Toast(toastLive);
         toast.show();
-    }
-
-    function updateCountsTable(counts) {
-        console.log("So luong con trung :" + Object.keys(counts).length)
-        console.log("So luong canh bao : " + insectThreshold)
-        const tbody = document.getElementById('countsTbody');
-        tbody.innerHTML = '';
-        let total = 0;
-        if (counts && Object.keys(counts).length > 0) {
-            Object.keys(counts).forEach(function (key) {
-                tbody.innerHTML += `<tr><td>${key}</td><td>${counts[key]}</td></tr>`;
-                total += counts[key];
-            });
-        } else {
-            tbody.innerHTML = '<tr><td colspan="2">Không phát hiện côn trùng.</td></tr>';
-        }
-        // Check threshold và báo toast
-        if (total > insectThreshold) showInsectToast(total);
     }
 
 
