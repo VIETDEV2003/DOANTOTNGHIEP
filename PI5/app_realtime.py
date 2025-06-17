@@ -37,6 +37,11 @@ global_frame = None
 frame_lock = threading.Lock()
 PIXEL_TO_MM = 0.05
 
+# ==== TRACKING ====
+tracker = sv.ByteTrack()  # tracking toàn cục
+box_annotator = sv.RoundBoxAnnotator()
+label_annotator = sv.LabelAnnotator()
+
 def camera_capture_loop(index):
     global global_frame
     cap = cv2.VideoCapture(index)
@@ -127,26 +132,43 @@ def process_frame_with_hailo(frame):
     if len(hailo_results) == 1:
         hailo_results = hailo_results[0]
     detections = extract_detections(hailo_results, frame.shape[0], frame.shape[1], threshold=0.5)
-    xyxy = detections["xyxy"]
-    class_id = detections["class_id"]
+    # ---------- TRACKING ----------
+    sv_detections = sv.Detections(
+        xyxy=detections["xyxy"],
+        confidence=detections["confidence"],
+        class_id=detections["class_id"],
+    )
+    sv_detections = tracker.update_with_detections(sv_detections)
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    for i in range(xyxy.shape[0]):
-        x1, y1, x2, y2 = xyxy[i].astype(int)
-        cls = class_id[i]
-        class_name = class_names[cls]
+    labels = []
+    for i, (class_id, tracker_id, box) in enumerate(zip(
+            sv_detections.class_id,
+            sv_detections.tracker_id,
+            sv_detections.xyxy,
+        )):
+        name = class_names[class_id]
+        x1, y1, x2, y2 = box
         width_pixel = abs(x2 - x1)
         height_pixel = abs(y2 - y1)
         width_mm = round(width_pixel * PIXEL_TO_MM, 2)
         height_mm = round(height_pixel * PIXEL_TO_MM, 2)
         insects_list.append({
-            "class": class_name,
+            "tracker_id": int(tracker_id) if tracker_id is not None else None,
+            "class": name,
             "width_mm": width_mm,
             "height_mm": height_mm,
             "detected_at": now,
         })
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(frame, f"{class_name}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    return frame, insects_list
+        # Label: ID + class + size
+        labels.append(f"#{tracker_id} {name} {width_mm}x{height_mm}mm")
+    # Annotate frame
+    annotated_frame = box_annotator.annotate(
+        scene=frame.copy(), detections=sv_detections
+    )
+    annotated_labeled_frame = label_annotator.annotate(
+        scene=annotated_frame, detections=sv_detections, labels=labels
+    )
+    return annotated_labeled_frame, insects_list
 
 def send_detect_mqtt(insects_list):
     client = mqtt.Client()
@@ -260,8 +282,6 @@ def control():
         return jsonify({"status": "ok", "msg": "Da gui qua MQTT", "data": data})
     except Exception as e:
         return jsonify({"status": "fail", "msg": str(e)}), 400
-
-# BỎ HẲN ROUTE /capture, realtime sẽ gửi qua MQTT từ camera_stream
 
 @app.route('/camera_stream')
 def camera_stream():
