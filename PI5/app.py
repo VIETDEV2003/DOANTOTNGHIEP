@@ -11,6 +11,7 @@ import os
 import json
 import glob
 import queue
+from flask_socketio import SocketIO, emit
 import supervision as sv
 
 # --------- Hailo imports ----------
@@ -54,6 +55,7 @@ def camera_capture_loop(index):
     cap.release()
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MQTT cau hinh
 MQTT_HOST = "103.146.22.13"
@@ -310,7 +312,7 @@ def capture():
             for item in insect_info_list
         ]
     }
-
+    socketio.emit('detect_result', latest_result, broadcast=True)
     return jsonify(latest_result)
 
 @app.route('/camera_stream')
@@ -337,6 +339,7 @@ def camera_stream():
                         for item in insect_info_list
                     ]
                 }
+                socketio.emit('detect_result', latest_result, broadcast=True)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
@@ -384,7 +387,7 @@ def process_video():
             for item in insect_info_list
         ]
     }
-
+    socketio.emit('detect_result', latest_result, broadcast=True)
     return jsonify(latest_result)
 
 @app.route('/get_config')
@@ -456,4 +459,4 @@ def latest_detect():
 
 if __name__ == '__main__':
     threading.Thread(target=camera_capture_loop, args=(0,), daemon=True).start()
-    app.run(host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000)
