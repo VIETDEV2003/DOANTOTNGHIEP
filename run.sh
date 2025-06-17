@@ -12,7 +12,7 @@ git pull
 #python3 -m venv venv
 
 # Kích hoạt lại venv
-source ~/Desktop/venv/bin/activate
+source venv/bin/activate
 
 # Cài lại requirements
 #pip install -r requirements.txt
