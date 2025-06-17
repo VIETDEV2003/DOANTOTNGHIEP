@@ -286,9 +286,9 @@ last_insect_time = 0
 
 @app.route('/camera_stream')
 def camera_stream():
-    global logged_tracker_ids, last_insect_time
+    global logged_tracker_ids
     def gen():
-        global conveyor_running
+        global conveyor_running, last_insect_time
         while True:
             frame = get_latest_frame()
             if frame is not None:
