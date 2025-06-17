@@ -347,9 +347,10 @@ def process_video():
     cv2.imwrite(image_path, frame)
     log_detection(dt, counts, image_path, "video")
 
-    socketio.emit('detect_result', {
-        "insects": insects_list
-    })
+    if insects_list:  # Nếu có phần tử, mới gửi socket
+        socketio.emit('detect_result', {
+            "insects": insects_list
+        })
 
     return jsonify({
         "insects": insects_list
