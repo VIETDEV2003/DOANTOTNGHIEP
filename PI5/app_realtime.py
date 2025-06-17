@@ -19,9 +19,8 @@ from flask_socketio import SocketIO
 # --------- Hailo imports ----------
 from utils import HailoAsyncInference
 
-# ==== Hailo model and label config ====
-HEF_PATH = "contrung_model.hef"  # Đường dẫn file model .hef của bạn
-LABEL_PATH = "contrung_labels.txt"  # Đường dẫn file txt nhãn của bạn
+HEF_PATH = "contrung_model.hef"
+LABEL_PATH = "contrung_labels.txt"
 
 with open(LABEL_PATH, "r", encoding="utf-8") as f:
     class_names = [line.strip() for line in f]
@@ -32,12 +31,11 @@ hailo_inference = HailoAsyncInference(
     input_queue=input_queue,
     output_queue=output_queue,
 )
-# Start Hailo inference thread
 threading.Thread(target=hailo_inference.run, daemon=True).start()
 
 global_frame = None
 frame_lock = threading.Lock()
-PIXEL_TO_MM = 0.05  # Cập nhật hệ số này theo thực tế camera của bạn
+PIXEL_TO_MM = 0.05
 
 def camera_capture_loop(index):
     global global_frame
@@ -58,7 +56,6 @@ def camera_capture_loop(index):
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# MQTT cau hinh
 MQTT_HOST = "103.146.22.13"
 MQTT_PORT = 1883
 MQTT_USER = "user1"
@@ -171,7 +168,6 @@ def log_detection(dt, counts, image_path, detect_id):
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"{detect_id},{dt.strftime('%Y-%m-%d %H:%M:%S')},{total_insects},{json.dumps(dict(counts), ensure_ascii=False)},{image_path}\n")
 
-# --- MQTT Sensor subscriber thread ---
 def on_sensor_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
@@ -283,7 +279,6 @@ def capture():
     raw_image_path = os.path.join(raw_dir, raw_image_name)
     cv2.imwrite(raw_image_path, frame)
 
-    # detect
     frame, counts, insects_list = process_frame_with_hailo(frame)
     _, buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(buffer).decode()
@@ -296,12 +291,12 @@ def capture():
     cv2.imwrite(image_path, frame)
     log_detection(dt, counts, image_path, "capture")
 
-    # GỬI DATA ĐẾN SOCKET CHO TẤT CẢ CLIENT
+    # GỬI DATA ĐẾN SOCKET
     socketio.emit('detect_result', {
         "image": img_base64,
         "counts": dict(counts),
         "insects": insects_list
-    }, broadcast=True)
+    })  # <-- ĐÃ BỎ broadcast=True
 
     return jsonify({
         "image": img_base64,
@@ -319,12 +314,11 @@ def camera_stream():
                 frame_draw, counts, insects_list = process_frame_with_hailo(frame.copy())
                 _, buffer = cv2.imencode('.jpg', frame_draw)
                 img_base64 = base64.b64encode(buffer).decode()
-                # Gửi data socket realtime luôn nếu muốn!
                 socketio.emit('detect_result', {
                     "image": img_base64,
                     "counts": dict(counts),
                     "insects": insects_list
-                }, broadcast=True)
+                })
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
@@ -358,12 +352,11 @@ def process_video():
     cv2.imwrite(image_path, frame)
     log_detection(dt, counts, image_path, "video")
 
-    # GỬI DATA ĐẾN SOCKET CHO TẤT CẢ CLIENT
     socketio.emit('detect_result', {
         "image": img_base64,
         "counts": dict(counts),
         "insects": insects_list
-    }, broadcast=True)
+    })  # <-- ĐÃ BỎ broadcast=True
 
     return jsonify({
         "image": img_base64,
