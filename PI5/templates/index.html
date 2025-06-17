@@ -281,15 +281,6 @@
                                     tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
                                     return;
                                 }
-                                for (const item of insects) {
-                                    const row = document.createElement('tr');
-                                    row.innerHTML = `
-            <td>${item.class}</td>
-            <td>${item.width_mm} x ${item.height_mm}</td>
-            <td>${item.detected_at}</td>
-        `;
-                                    tbody.appendChild(row);
-                                }
                             }
 
                             function updateStatus(insects) {
