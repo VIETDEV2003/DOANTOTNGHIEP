@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f082fe28-00c3-432c-8056-4607a82b5d19" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/PI5/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/PI5/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PI5/app_realtime.py" beforeDir="false" afterPath="$PROJECT_DIR$/PI5/app_realtime.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,7 +94,7 @@
       <workItem from="1749883568414" duration="561000" />
       <workItem from="1749993626599" duration="16000" />
       <workItem from="1750115768678" duration="7565000" />
-      <workItem from="1750131099976" duration="12917000" />
+      <workItem from="1750131099976" duration="12992000" />
     </task>
     <servers />
   </component>

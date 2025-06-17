@@ -310,6 +310,7 @@ def camera_stream():
                         conveyor_running = True
                         print("Đã gửi lệnh CHẠY băng tải vì phát hiện côn trùng")
                 else:
+                    print("Không phát hiện côn trùng, kiểm tra băng tải...")
                     if conveyor_running and (now - last_insect_time > auto_stop_delay):
                         send_conveyor_control(0, 0)
                         conveyor_running = False
@@ -355,7 +356,7 @@ def save_config_api():
         cfg = {
             "speed": speed,
             "ddos": ddos,
-            "auto_stop_delay": auto_stop_delay  # thêm vào config
+            "auto_stop_delay": auto_stop_delay
         }
         save_config(cfg)
         return jsonify({"status": "ok", "msg": "Da luu cau hinh!"})
