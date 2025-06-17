@@ -281,20 +281,41 @@ def control():
         return jsonify({"status": "fail", "msg": str(e)}), 400
 
 logged_tracker_ids = set()
+conveyor_running = False
+last_insect_time = 0
+
 @app.route('/camera_stream')
 def camera_stream():
-    global logged_tracker_ids
+    global logged_tracker_ids, conveyor_running, last_insect_time
     def gen():
         while True:
             frame = get_latest_frame()
             if frame is not None:
                 frame_draw, insects_list = process_frame_with_hailo(frame.copy())
-                # Lọc ra những tracker_id chưa từng lưu
+
+                # Điều khiển băng tải tự động
+                now = time.time()
+                has_insect = len(insects_list) > 0
+
+                if has_insect:
+                    last_insect_time = now
+                    if not conveyor_running:
+                        cfg = load_config()
+                        speed = cfg.get("speed", 255)
+                        send_conveyor_control(speed, 99999999)  # thời gian rất lớn
+                        conveyor_running = True
+                        print("Đã gửi lệnh CHẠY băng tải vì phát hiện côn trùng")
+                else:
+                    if conveyor_running and (now - last_insect_time > 5):
+                        send_conveyor_control(0, 0)
+                        conveyor_running = False
+                        print("Đã gửi lệnh DỪNG băng tải vì 5s không phát hiện côn trùng")
+
+                # --- Ghi log cho tracker mới ---
                 new_insects = []
                 new_tracker_ids = set()
                 for item in insects_list:
                     tid = item.get("tracker_id")
-                    # chỉ log tracker_id hợp lệ (không phải None)
                     if tid is not None and tid not in logged_tracker_ids:
                         new_insects.append(item)
                         new_tracker_ids.add(tid)
@@ -305,9 +326,8 @@ def camera_stream():
                     cv2.imwrite(image_path, frame_draw)
                     log_detection(datetime.now(), counts, image_path, detect_id)
                     send_detect_mqtt(new_insects)
-                    # Đánh dấu đã log tracker_id này
                     logged_tracker_ids.update(new_tracker_ids)
-                # Vẫn gửi ảnh realtime (frame_draw)
+
                 _, buffer = cv2.imencode('.jpg', frame_draw)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
@@ -381,7 +401,6 @@ def turn_off_led():
     except Exception as e:
         return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
 
-
 @app.route('/turn_on_led', methods=['POST'])
 def turn_on_led():
     try:
@@ -406,7 +425,6 @@ def turn_off_uva():
     except Exception as e:
         return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
 
-
 @app.route('/turn_on_uva', methods=['POST'])
 def turn_on_uva():
     try:
@@ -419,7 +437,6 @@ def turn_on_uva():
     except Exception as e:
         return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
 
-
 def send_conveyor_forever():
     cfg = load_config()
     speed = cfg.get("speed", 255)
@@ -428,6 +445,6 @@ def send_conveyor_forever():
     print(f"Đã gửi lệnh chạy băng tải: speed={speed}, time={time_ms}")
 
 if __name__ == '__main__':
-    send_conveyor_forever()
+    send_conveyor_control(0, 0)
     threading.Thread(target=camera_capture_loop, args=(0,), daemon=True).start()
     app.run(host='0.0.0.0', port=5000)
