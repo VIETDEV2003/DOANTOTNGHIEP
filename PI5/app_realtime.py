@@ -73,7 +73,7 @@ os.makedirs(CAPTURE_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 
 CONFIG_FILE = "config.json"
-DEFAULT_CONFIG = {"speed": 255, "time": 1000}
+DEFAULT_CONFIG = {"speed": 255, "time": 1000, "auto_stop_delay": 5}
 
 def load_config():
     if not os.path.exists(CONFIG_FILE):
@@ -298,16 +298,19 @@ def camera_stream():
                 now = time.time()
                 has_insect = len(insects_list) > 0
 
+                cfg = load_config()
+                auto_stop_delay = cfg.get("auto_stop_delay", 5)
+
                 if has_insect:
                     last_insect_time = now
                     if not conveyor_running:
                         cfg = load_config()
                         speed = cfg.get("speed", 255)
-                        send_conveyor_control(speed, 99999999)  # thời gian rất lớn
+                        send_conveyor_control(speed, -1)
                         conveyor_running = True
                         print("Đã gửi lệnh CHẠY băng tải vì phát hiện côn trùng")
                 else:
-                    if conveyor_running and (now - last_insect_time > 5):
+                    if conveyor_running and (now - last_insect_time > auto_stop_delay):
                         send_conveyor_control(0, 0)
                         conveyor_running = False
                         print("Đã gửi lệnh DỪNG băng tải vì 5s không phát hiện côn trùng")
