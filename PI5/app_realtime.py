@@ -12,6 +12,8 @@ import json
 import glob
 import queue
 import supervision as sv
+import eventlet
+import eventlet.wsgi
 
 # --------- Hailo imports ----------
 from utils import HailoAsyncInference
@@ -381,4 +383,4 @@ def list_schedule():
 
 if __name__ == '__main__':
     threading.Thread(target=camera_capture_loop, args=(0,), daemon=True).start()
-    app.run(host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000)
