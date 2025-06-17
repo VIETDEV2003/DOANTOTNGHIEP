@@ -310,7 +310,7 @@ def camera_stream():
                         conveyor_running = True
                         print("Đã gửi lệnh CHẠY băng tải vì phát hiện côn trùng")
                 else:
-                    print("Không phát hiện côn trùng, kiểm tra băng tải...")
+                    print("Khong phat hien con trung.... Dung sau " + str(auto_stop_delay) + " giay")
                     if conveyor_running and (now - last_insect_time > auto_stop_delay):
                         send_conveyor_control(0, 0)
                         conveyor_running = False
