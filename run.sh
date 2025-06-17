@@ -18,7 +18,9 @@ source venv/bin/activate
 #pip install -r requirements.txt
 
 # Cai dat cac thu vien can thiet
-pip install -r requirements.txt
+#pip install -r requirements.txt
+
+pip install ~/Desktop/doan/PI5/hailort-4.20.0-cp310-cp310-linux_aarch64.whl
 
 # Chay chuong trinh python
 python app_realtime.py
