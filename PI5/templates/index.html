@@ -213,9 +213,6 @@
                             <h5 class="text-center">Camera realtime</h5>
                             <img id="cameraStream" class="img-preview" src="/camera_stream" alt="Camera realtime">
                         </div>
-                        <!-- Thêm vào phần <head> hoặc trước </body> -->
-                        <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-
                         <div class="col-md-6">
                             <h5 class="text-center" style="margin-top: 20px">Kết quả đếm côn trùng</h5>
                             <table class="table table-bordered counts-table" id="countsTable">
@@ -236,13 +233,15 @@
 
                         <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
                         <script>
-                            // 1. Kết nối MQTT
                             const options = {
                                 username: 'user1',
                                 password: '12345678',
                                 connectTimeout: 4000,
                             }
-                            const client = mqtt.connect('ws://103.146.22.13:9001', options); // ws://HOST:PORT
+                            const client = mqtt.connect('ws://103.146.22.13:9001', options);
+
+                            // Biến toàn cục để lưu tất cả lịch sử các lần detect
+                            let allInsects = [];
 
                             client.on('connect', function () {
                                 console.log('MQTT Connected');
@@ -259,7 +258,14 @@
                                 if (topic === 'doan/contrung/result') {
                                     try {
                                         const data = JSON.parse(message.toString());
-                                        updateCountsTable(data.insects);
+                                        // Thêm từng con côn trùng vào đầu mảng (unshift)
+                                        if (Array.isArray(data.insects)) {
+                                            // Gộp từng item vào allInsects, mới nhất lên đầu
+                                            for (let i = data.insects.length - 1; i >= 0; i--) {
+                                                allInsects.unshift(data.insects[i]);
+                                            }
+                                        }
+                                        updateCountsTable();
                                         updateStatus(data.insects);
                                         console.log('MQTT data:', data);
                                     } catch (e) {
@@ -268,16 +274,14 @@
                                 }
                             });
 
-                            function updateCountsTable(insects) {
+                            function updateCountsTable() {
                                 const tbody = document.getElementById('countsTbody');
                                 tbody.innerHTML = '';
-                                if (!insects || insects.length === 0) {
+                                if (!allInsects || allInsects.length === 0) {
                                     tbody.innerHTML = '<tr><td colspan="4" class="text-center">Không có dữ liệu</td></tr>';
                                     return;
                                 }
-                                // Đảo ngược để mới nhất lên trên cùng
-                                const sorted = [...insects].reverse();
-                                for (const item of sorted) {
+                                for (const item of allInsects) {
                                     const row = document.createElement('tr');
                                     row.innerHTML = `
                                         <td>${item.tracker_id ?? '-'}</td>
