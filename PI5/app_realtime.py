@@ -16,7 +16,6 @@ import eventlet
 import eventlet.wsgi
 from flask_socketio import SocketIO
 
-
 # --------- Hailo imports ----------
 from utils import HailoAsyncInference
 
@@ -38,6 +37,7 @@ threading.Thread(target=hailo_inference.run, daemon=True).start()
 
 global_frame = None
 frame_lock = threading.Lock()
+PIXEL_TO_MM = 0.05  # Cập nhật hệ số này theo thực tế camera của bạn
 
 def camera_capture_loop(index):
     global global_frame
@@ -67,7 +67,6 @@ MQTT_TOPIC = "doan/contrung/control"
 SENSOR_TOPIC = "doan/contrung/sensor"
 MQTT_SCHEDULE_RESP = "doan/contrung/schedule"
 
-# Thu muc luu anh va log
 CAPTURE_DIR = "captures"
 LOG_DIR = "logs"
 os.makedirs(CAPTURE_DIR, exist_ok=True)
@@ -92,9 +91,7 @@ def get_latest_frame():
     with frame_lock:
         return global_frame.copy() if global_frame is not None else None
 
-def extract_detections(
-    hailo_output, h, w, threshold=0.5
-):
+def extract_detections(hailo_output, h, w, threshold=0.5):
     xyxy = []
     confidence = []
     class_id = []
@@ -125,6 +122,7 @@ def extract_detections(
 
 def process_frame_with_hailo(frame):
     insect_counts = Counter()
+    insects_list = []
     model_h, model_w, _ = hailo_inference.get_input_shape()
     input_frame = cv2.resize(frame, (model_w, model_h))
     input_queue.put([input_frame])
@@ -139,9 +137,21 @@ def process_frame_with_hailo(frame):
         cls = class_id[i]
         class_name = class_names[cls]
         insect_counts[class_name] += 1
+
+        width_pixel = abs(x2-x1)
+        height_pixel = abs(y2-y1)
+        width_mm = round(width_pixel * PIXEL_TO_MM, 2)
+        height_mm = round(height_pixel * PIXEL_TO_MM, 2)
+        insects_list.append({
+            "class": class_name,
+            "width_mm": width_mm,
+            "height_mm": height_mm,
+            "detected_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        })
+
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(frame, f"{class_name}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    return frame, insect_counts
+    return frame, insect_counts, insects_list
 
 def send_conveyor_control(speed, time_ms):
     client = mqtt.Client()
@@ -273,7 +283,8 @@ def capture():
     raw_image_path = os.path.join(raw_dir, raw_image_name)
     cv2.imwrite(raw_image_path, frame)
 
-    frame, counts = process_frame_with_hailo(frame)
+    # detect
+    frame, counts, insects_list = process_frame_with_hailo(frame)
     _, buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(buffer).decode()
 
@@ -285,7 +296,18 @@ def capture():
     cv2.imwrite(image_path, frame)
     log_detection(dt, counts, image_path, "capture")
 
-    return jsonify({"image": img_base64, "counts": dict(counts)})
+    # GỬI DATA ĐẾN SOCKET CHO TẤT CẢ CLIENT
+    socketio.emit('detect_result', {
+        "image": img_base64,
+        "counts": dict(counts),
+        "insects": insects_list
+    }, broadcast=True)
+
+    return jsonify({
+        "image": img_base64,
+        "counts": dict(counts),
+        "insects": insects_list
+    })
 
 @app.route('/camera_stream')
 def camera_stream():
@@ -293,8 +315,16 @@ def camera_stream():
         while True:
             frame = get_latest_frame()
             if frame is not None:
-                frame_draw, _ = process_frame_with_hailo(frame.copy())
+                dt = datetime.now()
+                frame_draw, counts, insects_list = process_frame_with_hailo(frame.copy())
                 _, buffer = cv2.imencode('.jpg', frame_draw)
+                img_base64 = base64.b64encode(buffer).decode()
+                # Gửi data socket realtime luôn nếu muốn!
+                socketio.emit('detect_result', {
+                    "image": img_base64,
+                    "counts": dict(counts),
+                    "insects": insects_list
+                }, broadcast=True)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
@@ -317,7 +347,7 @@ def process_video():
         return jsonify({"error": "Khong doc duoc video"}), 500
 
     dt = datetime.now()
-    frame, counts = process_frame_with_hailo(frame)
+    frame, counts, insects_list = process_frame_with_hailo(frame)
     _, buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(buffer).decode()
 
@@ -328,7 +358,18 @@ def process_video():
     cv2.imwrite(image_path, frame)
     log_detection(dt, counts, image_path, "video")
 
-    return jsonify({"image": img_base64, "counts": dict(counts)})
+    # GỬI DATA ĐẾN SOCKET CHO TẤT CẢ CLIENT
+    socketio.emit('detect_result', {
+        "image": img_base64,
+        "counts": dict(counts),
+        "insects": insects_list
+    }, broadcast=True)
+
+    return jsonify({
+        "image": img_base64,
+        "counts": dict(counts),
+        "insects": insects_list
+    })
 
 @app.route('/get_config')
 def get_config():
