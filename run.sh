@@ -21,4 +21,4 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Chay chuong trinh python
-python app.py
+python app_realtime.py
