@@ -411,13 +411,8 @@
                                    required>
                         </div>
                         <div class="mb-3">
-                            <label for="timeActionInput" class="form-label">Thời gian chạy trước khi chụp (ms):</label>
-                            <input type="number" class="form-control" id="timeActionInput" name="time_action" min="100"
-                                   step="100" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="timeInput" class="form-label">Thời gian chạy bỏ côn trùng (ms):</label>
-                            <input type="number" class="form-control" id="timeInput" name="time" min="100" step="100"
+                            <label for="timeInput" class="form-label">Thời gian băng tải chờ khi không có côn trùng tới khi dừng:</label>
+                            <input type="number" class="form-control" id="autoStopDelay" name="auto_stop_delay" min="100" step="100"
                                    required>
                         </div>
                         <div class="mb-3">
@@ -522,9 +517,8 @@
             .then(r => r.json())
             .then(cfg => {
                 document.getElementById('speedInput').value = cfg.speed;
-                document.getElementById('timeInput').value = cfg.time;
+                document.getElementById('autoStopDelay').value = cfg.auto_stop_delay;
                 document.getElementById('ddosInput').value = cfg.ddos || 5;
-                document.getElementById('timeActionInput').value = cfg.time_action || 1000; // <-- thêm dòng này
             });
     }
 
@@ -535,13 +529,12 @@
     document.getElementById('configForm').onsubmit = function (e) {
         e.preventDefault();
         let speed = parseInt(document.getElementById('speedInput').value) || 255;
-        let time = parseInt(document.getElementById('timeInput').value) || 1000;
+        let time = parseInt(document.getElementById('autoStopDelay').value) || 1000;
         let ddos = parseInt(document.getElementById('ddosInput').value) || 5;
-        let time_action = parseInt(document.getElementById('timeActionInput').value) || 1000; // <-- thêm dòng này
         fetch('/save_config', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({speed: speed, time: time, ddos: ddos, time_action: time_action}) // <-- thêm time_action
+            body: JSON.stringify({speed: speed, auto_stop_delay: time, ddos: ddos}) // <-- thêm time_action
         })
             .then(r => r.json())
             .then(data => {

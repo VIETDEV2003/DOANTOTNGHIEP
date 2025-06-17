@@ -343,15 +343,20 @@ def camera_stream():
 def get_config():
     return jsonify(load_config())
 
+
 @app.route('/save_config', methods=['POST'])
 def save_config_api():
     try:
         data = request.get_json()
         speed = int(data.get("speed", 255))
-        time_ = int(data.get("time", 1000))
         ddos = int(data.get("ddos", 5))
-        time_action = int(data.get("time_action", 1000))
-        cfg = {"speed": speed, "time": time_, "ddos": ddos, "time_action": time_action}
+        auto_stop_delay = float(data.get("auto_stop_delay", 5))  # mới thêm
+
+        cfg = {
+            "speed": speed,
+            "ddos": ddos,
+            "auto_stop_delay": auto_stop_delay  # thêm vào config
+        }
         save_config(cfg)
         return jsonify({"status": "ok", "msg": "Da luu cau hinh!"})
     except Exception as e:
