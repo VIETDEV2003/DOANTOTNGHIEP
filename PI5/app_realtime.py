@@ -314,7 +314,7 @@ def camera_stream():
                     if conveyor_running and (now - last_insect_time > auto_stop_delay):
                         send_conveyor_control(0, 0)
                         conveyor_running = False
-                        print("Đã gửi lệnh DỪNG băng tải vì 5s không phát hiện côn trùng")
+                        print("Da gui lenh DUNG băng tải sau " + str(auto_stop_delay) + " giay khong phat hien con trung")
 
                 # --- Ghi log cho tracker mới ---
                 new_insects = []
