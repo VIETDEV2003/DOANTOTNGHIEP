@@ -143,6 +143,7 @@ def process_frame_with_hailo(frame):
             "height_mm": height_mm,
             "detected_at": now,
         })
+        print(f"Phat hien {class_name} ({width_mm}mm x {height_mm}mm) tai vi tri ({x1}, {y1}) den ({x2}, {y2})")
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(frame, f"{class_name}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     return frame, insects_list
@@ -262,7 +263,7 @@ def camera_stream():
             frame = get_latest_frame()
             if frame is not None:
                 frame_draw, insects_list = process_frame_with_hailo(frame.copy())
-                if insects_list:  # chỉ gửi nếu có data
+                if insects_list:
                     socketio.emit('detect_result', {
                         "insects": insects_list
                     })
