@@ -423,8 +423,7 @@ def turn_on_uva():
 def send_conveyor_forever():
     cfg = load_config()
     speed = cfg.get("speed", 255)
-    # Gửi thời gian rất lớn, ví dụ 1 tỉ ms (~11 ngày)
-    time_ms = 10**9
+    time_ms = -1
     send_conveyor_control(speed, time_ms)
     print(f"Đã gửi lệnh chạy băng tải: speed={speed}, time={time_ms}")
 
