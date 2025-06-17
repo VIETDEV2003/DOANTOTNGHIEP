@@ -81,9 +81,6 @@ def save_config(cfg):
     with open(CONFIG_FILE, "w") as f:
         json.dump(cfg, f)
 
-detection_thread = None
-detection_running = False
-latest_result = {"image": "", "counts": {}}
 sensor_data_buffer = deque(maxlen=200)
 
 def get_latest_frame():
@@ -158,53 +155,6 @@ def log_detection(dt, counts, image_path, detect_id):
     total_insects = sum(counts.values())
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"{detect_id},{dt.strftime('%Y-%m-%d %H:%M:%S')},{total_insects},{json.dumps(dict(counts), ensure_ascii=False)},{image_path}\n")
-
-def continuous_detect():
-    global detection_running, latest_result
-    detect_id = 1
-
-    config = load_config()
-    speed = config.get("speed", 255)
-    time_action = config.get("time_action", 1000)
-    time_after = config.get("time", 1000)
-
-    send_conveyor_control(speed=speed, time_ms=time_action)
-    time.sleep(time_action / 1000.0)
-
-    for _ in range(7):
-        frame = get_latest_frame()
-    if frame is None:
-        print("Khong lay duoc hinh tu camera.")
-        return
-
-    dt = datetime.now()
-    date_str = dt.strftime("%Y-%m-%d")
-    time_str = dt.strftime("%H-%M-%S")
-
-    raw_dir = "raw"
-    os.makedirs(raw_dir, exist_ok=True)
-    raw_image_name = f"raw_{date_str}_{time_str}_{detect_id}.jpg"
-    raw_image_path = os.path.join(raw_dir, raw_image_name)
-    cv2.imwrite(raw_image_path, frame)
-
-    frame_draw, counts = process_frame_with_hailo(frame)
-
-    send_conveyor_control(speed=speed, time_ms=time_after)
-    time.sleep(time_after / 1000.0)
-
-    image_name = f"detect_{date_str}_{time_str}_{detect_id}.jpg"
-    image_path = os.path.join(CAPTURE_DIR, image_name)
-    cv2.imwrite(image_path, frame_draw)
-
-    _, buffer = cv2.imencode('.jpg', frame_draw)
-    img_base64 = base64.b64encode(buffer).decode()
-
-    latest_result = {"image": img_base64, "counts": dict(counts)}
-
-    log_detection(dt, counts, image_path, detect_id)
-
-    print(f"Lan {detect_id} | {dt.strftime('%H:%M:%S')} | Tong: {sum(counts.values())} | {dict(counts)}")
-    print("Nhan dien xong 1 lan, dung.")
 
 # --- MQTT Sensor subscriber thread ---
 def on_sensor_message(client, userdata, msg):
@@ -332,72 +282,14 @@ def capture():
 
     return jsonify({"image": img_base64, "counts": dict(counts)})
 
-# (Các route MQTT LED/UVA giữ nguyên như code cũ...)
-
-motion_lock = threading.Lock()
-
 @app.route('/camera_stream')
 def camera_stream():
-    prev_frame = [None]
-    global detection_running, detection_thread
-
     def gen():
-        global detection_running, detection_thread
         while True:
             frame = get_latest_frame()
             if frame is not None:
-                vis_frame = frame.copy()
-                h, w = vis_frame.shape[:2]
-                x1 = int(w * 0.7)
-                x2 = w
-                y1 = int(h * 0.28)
-                y2 = int(h * 0.8)
-                roi = vis_frame[y1:y2, x1:x2]
-
-                motion = False
-                if prev_frame[0] is not None:
-                    prev_roi = prev_frame[0][y1:y2, x1:x2]
-                    diff = cv2.absdiff(roi, prev_roi)
-                    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-                    blur = cv2.GaussianBlur(gray, (5,5), 0)
-                    _, thresh = cv2.threshold(blur, 20, 255, cv2.THRESH_BINARY)
-                    dilated = cv2.dilate(thresh, None, iterations=3)
-                    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                    for c in contours:
-                        if cv2.contourArea(c) < 500:
-                            continue
-                        motion = True
-                        (x, y, w_box, h_box) = cv2.boundingRect(c)
-                        cv2.rectangle(vis_frame, (x1 + x, y1 + y), (x1 + x + w_box, y1 + y + h_box), (0,0,255), 2)
-
-                cv2.rectangle(vis_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                if motion:
-                    cv2.putText(vis_frame, "Co chuyen dong!", (x1 + 10, y1 + 40), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                (0, 0, 255), 2)
-
-                    if detection_running:
-                        if detection_thread is None or not detection_thread.is_alive():
-                            check_frame = get_latest_frame()
-                            if check_frame is not None:
-                                roi_check = check_frame[y1:y2, x1:x2]
-                                frame_roi, counts = process_frame_with_hailo(roi_check)
-                                has_object = sum(counts.values()) > 0
-                                if has_object:
-                                    object_names = list(counts.keys())
-                                    print(
-                                        f">>> Trigger NHAN DIEN (co object trong vung chuyen dong): {', '.join(object_names)}")
-                                    detection_thread = threading.Thread(target=continuous_detect, daemon=True)
-                                    detection_thread.start()
-                                else:
-                                    print(">>> Chuyen dong nhung KHONG co object (bo qua) <<<")
-                            else:
-                                print(">>> Khong lay duoc frame moi de kiem tra object <<<")
-                        else:
-                            print(">>> Thread nhan dien dang chay, khong tao moi <<<")
-                    else:
-                        print(">>> detection_running=False, khong tao thread <<<")
-                prev_frame[0] = frame.copy()
-                _, buffer = cv2.imencode('.jpg', vis_frame)
+                frame_draw, _ = process_frame_with_hailo(frame.copy())
+                _, buffer = cv2.imencode('.jpg', frame_draw)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
@@ -432,24 +324,6 @@ def process_video():
     log_detection(dt, counts, image_path, "video")
 
     return jsonify({"image": img_base64, "counts": dict(counts)})
-
-@app.route('/start_detect', methods=['POST'])
-def start_detect():
-    global detection_running
-    if detection_running:
-        return jsonify({"status": "Da chay nhan dien lien tuc"}), 200
-    detection_running = True
-    return jsonify({"status": "Bat dau nhan dien lien tuc"}), 200
-
-@app.route('/stop_detect', methods=['POST'])
-def stop_detect():
-    global detection_running
-    detection_running = False
-    return jsonify({"status": "Da dung nhan dien lien tuc"}), 200
-
-@app.route('/latest_detect')
-def latest_detect():
-    return jsonify(latest_result)
 
 @app.route('/get_config')
 def get_config():
