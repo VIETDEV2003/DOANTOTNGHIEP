@@ -283,6 +283,7 @@
                             // Nhận dữ liệu realtime từ server
                             socket.on('detect_result', function (data) {
                                 console.log('Nhận được detect_result:', data);
+                                console.log(data.insects);
                                 updateCountsTable(data.insects);
                                 updateStatus(data.insects);
                             });
