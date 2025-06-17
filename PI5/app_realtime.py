@@ -14,6 +14,8 @@ import queue
 import supervision as sv
 import eventlet
 import eventlet.wsgi
+from flask_socketio import SocketIO
+
 
 # --------- Hailo imports ----------
 from utils import HailoAsyncInference
@@ -54,6 +56,7 @@ def camera_capture_loop(index):
     cap.release()
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # MQTT cau hinh
 MQTT_HOST = "103.146.22.13"
