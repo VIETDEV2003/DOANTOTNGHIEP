@@ -1,6 +1,6 @@
-flask==2.3.2
-requests==2.31.0
-numpy==1.25.2
+flask
+requests
+numpy
 ultralytics
 paho-mqtt
 supervision
