@@ -372,6 +372,7 @@
                                     <th>#</th>
                                     <th>Trạng thái</th>
                                     <th>Thời gian</th>
+                                    <th>Xóa</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -801,7 +802,6 @@
 
     document.addEventListener('DOMContentLoaded', loadScheduleList);
 
-
     function loadScheduleList() {
         fetch('/list_schedule')
             .then(res => res.json())
@@ -811,20 +811,51 @@
                 if (Array.isArray(list) && list.length > 0) {
                     list.forEach((item, idx) => {
                         tbody.innerHTML += `
-                        <tr>
-                            <td>${idx + 1}</td>
-                            <td>
-                                <span class="badge ${item.status === "on" ? "bg-success" : "bg-danger"}">
-                                    ${item.status === "on" ? "Bật" : "Tắt"}
-                                </span>
-                            </td>
-                            <td>${item.time}</td>
-                        </tr>
-                    `;
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>
+                            <span class="badge ${item.status === "on" ? "bg-success" : "bg-danger"}">
+                                ${item.status === "on" ? "Bật" : "Tắt"}
+                            </span>
+                        </td>
+                        <td>${item.time}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${idx})">
+                                <i class="bi bi-trash"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                `;
                     });
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Không có lịch nào!</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Không có lịch nào!</td></tr>`;
                 }
+            });
+    }
+
+    function deleteSchedule(index) {
+        if (!confirm("Bạn có chắc muốn xóa lịch này?")) return;
+        // Gửi lệnh delete qua /control (giống add_schedule)
+        const payload = {
+            action: "delete_schedule",
+            index: index // index này là thứ tự trong mảng (bắt đầu từ 0)
+        };
+        fetch('/control', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+            .then(r => r.json())
+            .then(resp => {
+                if (resp.status === "ok") {
+                    alert("Đã xóa lịch!");
+                    loadScheduleList();
+                } else {
+                    alert("Xóa không thành công: " + (resp.msg || ""));
+                }
+            })
+            .catch(() => {
+                alert("Lỗi kết nối API!");
             });
     }
 </script>
