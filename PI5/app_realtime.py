@@ -14,7 +14,6 @@ import queue
 import supervision as sv
 import eventlet
 import eventlet.wsgi
-from flask_socketio import SocketIO
 import uuid
 
 # --------- Hailo imports ----------
@@ -60,7 +59,6 @@ def camera_capture_loop(index):
     cap.release()
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 MQTT_HOST = "103.146.22.13"
 MQTT_PORT = 1883
@@ -373,6 +371,15 @@ def list_schedule():
         time.sleep(0.1)
     return jsonify(schedule_cache)
 
+def send_conveyor_forever():
+    cfg = load_config()
+    speed = cfg.get("speed", 255)
+    # Gửi thời gian rất lớn, ví dụ 1 tỉ ms (~11 ngày)
+    time_ms = 10**9
+    send_conveyor_control(speed, time_ms)
+    print(f"Đã gửi lệnh chạy băng tải: speed={speed}, time={time_ms}")
+
 if __name__ == '__main__':
+    send_conveyor_forever()
     threading.Thread(target=camera_capture_loop, args=(0,), daemon=True).start()
-    socketio.run(app, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000)
