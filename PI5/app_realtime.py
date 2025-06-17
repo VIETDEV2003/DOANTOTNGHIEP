@@ -118,7 +118,6 @@ def extract_detections(hailo_output, h, w, threshold=0.5):
     }
 
 def process_frame_with_hailo(frame):
-    insect_counts = Counter()
     insects_list = []
     model_h, model_w, _ = hailo_inference.get_input_shape()
     input_frame = cv2.resize(frame, (model_w, model_h))
@@ -134,8 +133,6 @@ def process_frame_with_hailo(frame):
         x1, y1, x2, y2 = xyxy[i].astype(int)
         cls = class_id[i]
         class_name = class_names[cls]
-        insect_counts[class_name] += 1
-
         width_pixel = abs(x2 - x1)
         height_pixel = abs(y2 - y1)
         width_mm = round(width_pixel * PIXEL_TO_MM, 2)
@@ -146,10 +143,9 @@ def process_frame_with_hailo(frame):
             "height_mm": height_mm,
             "detected_at": now,
         })
-
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(frame, f"{class_name}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-    return frame, insect_counts, insects_list
+    return frame, insects_list
 
 def send_conveyor_control(speed, time_ms):
     client = mqtt.Client()
@@ -257,49 +253,7 @@ def control():
     except Exception as e:
         return jsonify({"status": "fail", "msg": str(e)}), 400
 
-@app.route('/capture', methods=['POST'])
-def capture():
-    config = load_config()
-    speed = config.get("speed", 255)
-    time_action = config.get("time_action", 1000)
-    time_after = config.get("time", 1000)
-
-    send_conveyor_control(speed=speed, time_ms=time_action)
-    time.sleep(time_action / 1000.0)
-
-    frame = get_latest_frame()
-    if frame is None:
-        return jsonify({"error": "Khong truy cap duoc camera"}), 500
-    dt = datetime.now()
-    date_str = dt.strftime("%Y-%m-%d")
-    time_str = dt.strftime("%H-%M-%S")
-
-    raw_dir = "raw"
-    os.makedirs(raw_dir, exist_ok=True)
-    raw_image_name = f"raw_{date_str}_{time_str}_capture.jpg"
-    raw_image_path = os.path.join(raw_dir, raw_image_name)
-    cv2.imwrite(raw_image_path, frame)
-
-    frame, counts, insects_list = process_frame_with_hailo(frame)
-    _, buffer = cv2.imencode('.jpg', frame)
-    img_base64 = base64.b64encode(buffer).decode()
-
-    send_conveyor_control(speed=speed, time_ms=time_after)
-    time.sleep(time_after / 1000.0)
-
-    image_name = f"detect_{date_str}_{time_str}_capture.jpg"
-    image_path = os.path.join(CAPTURE_DIR, image_name)
-    cv2.imwrite(image_path, frame)
-    log_detection(dt, counts, image_path, "capture")
-
-    # Chỉ trả về danh sách côn trùng nhận diện được, với tên, kích thước và thời gian
-    socketio.emit('detect_result', {
-        "insects": insects_list
-    })
-
-    return jsonify({
-        "insects": insects_list
-    })
+# BỎ HẲN ROUTE /capture, realtime sẽ gửi qua socket từ camera_stream
 
 @app.route('/camera_stream')
 def camera_stream():
@@ -307,54 +261,17 @@ def camera_stream():
         while True:
             frame = get_latest_frame()
             if frame is not None:
-                dt = datetime.now()
-                frame_draw, counts, insects_list = process_frame_with_hailo(frame.copy())
+                frame_draw, insects_list = process_frame_with_hailo(frame.copy())
+                if insects_list:  # chỉ gửi nếu có data
+                    socketio.emit('detect_result', {
+                        "insects": insects_list
+                    })
                 _, buffer = cv2.imencode('.jpg', frame_draw)
-                img_base64 = base64.b64encode(buffer).decode()
-                socketio.emit('detect_result', {
-                    "insects": insects_list
-                })
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
             time.sleep(0.03)
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/video', methods=['POST'])
-def process_video():
-    if 'video' not in request.files:
-        return jsonify({"error": "Khong co file video"}), 400
-
-    video_file = request.files['video']
-    video_path = 'temp_video.mp4'
-    video_file.save(video_path)
-
-    cap = cv2.VideoCapture(video_path)
-    ret, frame = cap.read()
-    cap.release()
-    if not ret:
-        return jsonify({"error": "Khong doc duoc video"}), 500
-
-    dt = datetime.now()
-    frame, counts, insects_list = process_frame_with_hailo(frame)
-    _, buffer = cv2.imencode('.jpg', frame)
-    img_base64 = base64.b64encode(buffer).decode()
-
-    date_str = dt.strftime("%Y-%m-%d")
-    time_str = dt.strftime("%H-%M-%S")
-    image_name = f"detect_{date_str}_{time_str}_video.jpg"
-    image_path = os.path.join(CAPTURE_DIR, image_name)
-    cv2.imwrite(image_path, frame)
-    log_detection(dt, counts, image_path, "video")
-
-    if insects_list:  # Nếu có phần tử, mới gửi socket
-        socketio.emit('detect_result', {
-            "insects": insects_list
-        })
-
-    return jsonify({
-        "insects": insects_list
-    })
 
 @app.route('/get_config')
 def get_config():
