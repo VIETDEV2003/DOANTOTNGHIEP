@@ -282,13 +282,20 @@ def control():
 
 logged_tracker_ids = set()
 conveyor_running = False
-last_insect_time = time.time() 
+last_insect_time = time.time()
 
 @app.route('/camera_stream')
 def camera_stream():
     global logged_tracker_ids
     def gen():
         global conveyor_running, last_insect_time
+
+        # Biến dùng cho FPS và độ phân giải
+        frame_count = 0
+        last_fps_time = time.time()
+        fps = 0.0
+        resolution = None
+
         while True:
             frame = get_latest_frame()
             if frame is not None:
@@ -315,6 +322,22 @@ def camera_stream():
                         send_conveyor_control(0, 0)
                         conveyor_running = False
                         print("Da gui lenh DUNG băng tải sau " + str(auto_stop_delay) + " giay khong phat hien con trung")
+
+                # ==== Thêm đo và in FPS, độ phân giải lên frame ====
+                frame_count += 1
+                current_time = time.time()
+                if resolution is None:
+                    h, w = frame_draw.shape[:2]
+                    resolution = f"{w}x{h}"
+                if current_time - last_fps_time >= 1.0:
+                    fps = frame_count / (current_time - last_fps_time)
+                    frame_count = 0
+                    last_fps_time = current_time
+                overlay_text = f"Resolution: {resolution} | FPS: {fps:.2f}"
+                cv2.putText(
+                    frame_draw, overlay_text, (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA
+                )
 
                 # --- Ghi log cho tracker mới ---
                 new_insects = []
