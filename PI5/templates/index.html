@@ -216,6 +216,9 @@
                             <h5 class="text-center">Camera realtime</h5>
                             <img id="cameraStream" class="img-preview" src="/camera_stream" alt="Camera realtime">
                         </div>
+                        <!-- Thêm vào phần <head> hoặc trước </body> -->
+                        <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
                         <div class="col-md-6">
                             <h5 class="text-center" style="margin-top: 20px">Kết quả đếm côn trùng</h5>
                             <table class="table table-bordered counts-table" id="countsTable">
@@ -233,22 +236,44 @@
                             <div id="status" class="mt-3 text-center text-info"></div>
                         </div>
 
-                        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
                         <script>
-                            const socket = io();
+                            // 1. Kết nối MQTT
+                            const options = {
+                                // Nếu broker của bạn cho phép websocket (ví dụ ws://103.146.22.13:9001)
+                                // Nếu chỉ hỗ trợ TCP (1883) thì không dùng được từ trình duyệt!
+                                // Thay đổi port và protocol nếu broker của bạn khác
+                                username: 'user1',
+                                password: '12345678',
+                                connectTimeout: 4000,
+                                // reconnectPeriod: 1000,
+                            }
+                            const client = mqtt.connect('ws://103.146.22.13:9001', options); // ws://HOST:PORT
 
-                            // Kết nối socket
-                            socket.on('connect', function () {
-                                console.log('Socket connected:', socket.id);
+                            client.on('connect', function () {
+                                console.log('MQTT Connected');
+                                client.subscribe('doan/contrung/result', function (err) {
+                                    if (err) {
+                                        console.error('Subscribe error', err);
+                                    }
+                                });
                             });
-                            socket.on('disconnect', function () {
-                                console.log('Socket disconnected');
+                            client.on('error', function (err) {
+                                console.error('MQTT Error', err);
                             });
-                            socket.on('connect_error', function (err) {
-                                console.log('Socket connection error:', err);
+                            client.on('message', function (topic, message) {
+                                // message là buffer, cần chuyển thành json nếu đúng topic
+                                if (topic === 'doan/contrung/result') {
+                                    try {
+                                        const data = JSON.parse(message.toString());
+                                        updateCountsTable(data.insects);
+                                        updateStatus(data.insects);
+                                        console.log('MQTT data:', data);
+                                    } catch (e) {
+                                        console.error('Parse result error', e, message.toString());
+                                    }
+                                }
                             });
 
-                            // Cập nhật bảng kết quả
                             function updateCountsTable(insects) {
                                 const tbody = document.getElementById('countsTbody');
                                 tbody.innerHTML = '';
@@ -256,11 +281,7 @@
                                     tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
                                     return;
                                 }
-                                console.log("Updating counts table with insects data:");
-                                console.log(insects);
                                 for (const item of insects) {
-                                    console.log(1)
-                                    console.log(item);
                                     const row = document.createElement('tr');
                                     row.innerHTML = `
             <td>${item.class}</td>
@@ -271,7 +292,6 @@
                                 }
                             }
 
-                            // Cập nhật thông báo trạng thái
                             function updateStatus(insects) {
                                 const statusDiv = document.getElementById('status');
                                 if (!insects || insects.length === 0) {
@@ -281,14 +301,6 @@
                                 let info = "Có " + insects.length + " côn trùng được phát hiện gần nhất.";
                                 statusDiv.innerHTML = info;
                             }
-
-                            // Nhận dữ liệu realtime từ server
-                            socket.on('detect_result', function (data) {
-                                console.log('Nhận được detect_result:', data);
-                                console.log(data.insects);
-                                updateCountsTable(data.insects);
-                                updateStatus(data.insects);
-                            });
                         </script>
                     </div>
                 </div>
