@@ -129,21 +129,22 @@ def process_frame_with_hailo(frame):
     detections = extract_detections(hailo_results, frame.shape[0], frame.shape[1], threshold=0.5)
     xyxy = detections["xyxy"]
     class_id = detections["class_id"]
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for i in range(xyxy.shape[0]):
         x1, y1, x2, y2 = xyxy[i].astype(int)
         cls = class_id[i]
         class_name = class_names[cls]
         insect_counts[class_name] += 1
 
-        width_pixel = abs(x2-x1)
-        height_pixel = abs(y2-y1)
+        width_pixel = abs(x2 - x1)
+        height_pixel = abs(y2 - y1)
         width_mm = round(width_pixel * PIXEL_TO_MM, 2)
         height_mm = round(height_pixel * PIXEL_TO_MM, 2)
         insects_list.append({
             "class": class_name,
             "width_mm": width_mm,
             "height_mm": height_mm,
-            "detected_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "detected_at": now,
         })
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -291,16 +292,12 @@ def capture():
     cv2.imwrite(image_path, frame)
     log_detection(dt, counts, image_path, "capture")
 
-    # GỬI DATA ĐẾN SOCKET
+    # Chỉ trả về danh sách côn trùng nhận diện được, với tên, kích thước và thời gian
     socketio.emit('detect_result', {
-        "image": img_base64,
-        "counts": dict(counts),
         "insects": insects_list
-    })  # <-- ĐÃ BỎ broadcast=True
+    })
 
     return jsonify({
-        "image": img_base64,
-        "counts": dict(counts),
         "insects": insects_list
     })
 
@@ -315,8 +312,6 @@ def camera_stream():
                 _, buffer = cv2.imencode('.jpg', frame_draw)
                 img_base64 = base64.b64encode(buffer).decode()
                 socketio.emit('detect_result', {
-                    "image": img_base64,
-                    "counts": dict(counts),
                     "insects": insects_list
                 })
                 frame_bytes = buffer.tobytes()
@@ -353,14 +348,10 @@ def process_video():
     log_detection(dt, counts, image_path, "video")
 
     socketio.emit('detect_result', {
-        "image": img_base64,
-        "counts": dict(counts),
         "insects": insects_list
-    })  # <-- ĐÃ BỎ broadcast=True
+    })
 
     return jsonify({
-        "image": img_base64,
-        "counts": dict(counts),
         "insects": insects_list
     })
 
