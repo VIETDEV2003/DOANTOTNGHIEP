@@ -200,9 +200,6 @@
                 <span id="clock"></span>
             </div>
             <div class="d-flex justify-content-center flex-wrap gap-2 my-4">
-                <button id="captureBtn" class="btn btn-primary">Chụp ảnh nhận diện</button>
-                <button id="startDetectBtn" class="btn btn-success">Nhận diện liên tục</button>
-                <button id="stopDetectBtn" class="btn btn-danger">Dừng nhận diện liên tục</button>
                 <button id="turnOnLedBtn" class="btn btn-warning">Bật đèn UVA</button>
                 <button id="turnOffLedBtn" class="btn btn-secondary">Tắt đèn UVA</button>
                 <button id="turnOnUVABtn" class="btn btn-warning">Bật đèn LED</button>
@@ -491,42 +488,6 @@
 
     // --- Polling và sự kiện các nút ---
     let pollInterval = null;
-
-    document.getElementById('captureBtn').onclick = function () {
-        stopPolling();
-        document.getElementById('status').innerText = "Đang chụp ảnh và nhận diện...";
-        fetch('/capture', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('status').innerText = data.error;
-                    return;
-                }
-                document.getElementById('resultImg').src = 'data:image/jpeg;base64,' + data.image;
-                updateCountsTable(data.counts);
-                document.getElementById('status').innerText = "Đã nhận diện và gửi lệnh băng tải!";
-            });
-    };
-
-    document.getElementById('startDetectBtn').onclick = function () {
-        document.getElementById('status').innerText = "Đang bắt đầu nhận diện liên tục...";
-        fetch('/start_detect', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
-                startPolling();
-            });
-    };
-
-    document.getElementById('stopDetectBtn').onclick = function () {
-        document.getElementById('status').innerText = "Đang dừng nhận diện liên tục...";
-        fetch('/stop_detect', {method: 'POST'})
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('status').innerText = data.status || "Đã gửi yêu cầu.";
-                stopPolling();
-            });
-    };
 
     // --- Polling functions for continuous detect ---
     function startPolling() {
