@@ -1,6 +1,7 @@
 flask
 requests
 numpy
+opencv-contrib-python
 ultralytics
 paho-mqtt
 supervision
