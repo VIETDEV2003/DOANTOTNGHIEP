@@ -4,3 +4,4 @@ numpy==1.25.2
 opencv-contrib-python
 ultralytics
 paho-mqtt
+supervision
