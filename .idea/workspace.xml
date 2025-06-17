@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f082fe28-00c3-432c-8056-4607a82b5d19" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/PI5/best.hef" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/PI5/perfomance.hef" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/PI5/raw.hef" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/PI5/realtime.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,19 +31,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Mai Hieu/Desktop/FREELANCER/toc_do_xe&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/Mai Hieu/Desktop/FREELANCER/con_trung/PI5",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Mai Hieu\Desktop\FREELANCER\con_trung\PI5" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="con_trung" type="Python.FlaskServer">
       <module name="con_trung" />
@@ -86,6 +96,8 @@
       <workItem from="1749838136362" duration="202000" />
       <workItem from="1749873702300" duration="2793000" />
       <workItem from="1749883568414" duration="561000" />
+      <workItem from="1749993626599" duration="16000" />
+      <workItem from="1750115768678" duration="5509000" />
     </task>
     <servers />
   </component>
