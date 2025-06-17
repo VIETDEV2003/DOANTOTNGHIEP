@@ -15,6 +15,7 @@ import supervision as sv
 import eventlet
 import eventlet.wsgi
 from flask_socketio import SocketIO
+import uuid
 
 # --------- Hailo imports ----------
 from utils import HailoAsyncInference
@@ -283,15 +284,34 @@ def control():
     except Exception as e:
         return jsonify({"status": "fail", "msg": str(e)}), 400
 
+logged_tracker_ids = set()
 @app.route('/camera_stream')
 def camera_stream():
+    global logged_tracker_ids
     def gen():
         while True:
             frame = get_latest_frame()
             if frame is not None:
                 frame_draw, insects_list = process_frame_with_hailo(frame.copy())
-                if insects_list:
-                    send_detect_mqtt(insects_list)
+                # Lọc ra những tracker_id chưa từng lưu
+                new_insects = []
+                new_tracker_ids = set()
+                for item in insects_list:
+                    tid = item.get("tracker_id")
+                    # chỉ log tracker_id hợp lệ (không phải None)
+                    if tid is not None and tid not in logged_tracker_ids:
+                        new_insects.append(item)
+                        new_tracker_ids.add(tid)
+                if new_insects:
+                    counts = Counter(item['class'] for item in new_insects)
+                    detect_id = str(uuid.uuid4())
+                    image_path = os.path.join(CAPTURE_DIR, f"{detect_id}.jpg")
+                    cv2.imwrite(image_path, frame_draw)
+                    log_detection(datetime.now(), counts, image_path, detect_id)
+                    send_detect_mqtt(new_insects)
+                    # Đánh dấu đã log tracker_id này
+                    logged_tracker_ids.update(new_tracker_ids)
+                # Vẫn gửi ảnh realtime (frame_draw)
                 _, buffer = cv2.imencode('.jpg', frame_draw)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
