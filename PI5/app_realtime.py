@@ -316,7 +316,6 @@ def camera_stream():
                 if has_insect:
                     last_insect_time = now
                     if not conveyor_running:
-                        cfg = load_config()
                         speed = cfg.get("speed", 200)
                         send_conveyor_control(speed, -1)
                         conveyor_running = True
@@ -344,24 +343,22 @@ def camera_stream():
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA
                 )
 
-                # --- Ghi log cho tracker_id mới duy nhất ---
-                new_insects_dict = {}
+                # --- Chỉ gửi MQTT cho tracker_id mới ---
+                new_insects = []
                 new_tracker_ids = set()
                 for item in insects_list:
                     tid = item.get("tracker_id")
-                    if tid is not None and tid not in logged_tracker_ids:
-                        # Nếu một tracker_id xuất hiện nhiều lần, chỉ lấy 1 lần đầu
-                        if tid not in new_insects_dict:
-                            new_insects_dict[tid] = item
-                            new_tracker_ids.add(tid)
-                if new_insects_dict:
-                    new_insects = list(new_insects_dict.values())
+                    if tid is not None and tid not in logged_tracker_ids and tid not in new_tracker_ids:
+                        new_insects.append(item)
+                        new_tracker_ids.add(tid)
+                if new_insects:
                     counts = Counter(item['class'] for item in new_insects)
                     detect_id = str(uuid.uuid4())
                     image_path = os.path.join(CAPTURE_DIR, f"{detect_id}.jpg")
                     cv2.imwrite(image_path, frame_draw)
                     log_detection(datetime.now(), counts, image_path, detect_id)
                     send_detect_mqtt(new_insects)
+                    # Đảm bảo tracker_id đã gửi sẽ không bao giờ gửi lại nữa
                     logged_tracker_ids.update(new_tracker_ids)
 
                 _, buffer = cv2.imencode('.jpg', frame_draw)
