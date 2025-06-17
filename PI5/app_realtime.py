@@ -282,7 +282,7 @@ def control():
 
 logged_tracker_ids = set()
 conveyor_running = False
-last_insect_time = 0
+last_insect_time = time.time() 
 
 @app.route('/camera_stream')
 def camera_stream():
