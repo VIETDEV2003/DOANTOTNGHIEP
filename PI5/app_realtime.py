@@ -296,7 +296,6 @@ def camera_stream():
     def gen():
         global conveyor_running, last_insect_time
 
-        # Biến dùng cho FPS và độ phân giải
         frame_count = 0
         last_fps_time = time.time()
         fps = 0.0
@@ -345,15 +344,18 @@ def camera_stream():
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA
                 )
 
-                # --- Ghi log cho tracker mới ---
-                new_insects = []
+                # --- Ghi log cho tracker_id mới duy nhất ---
+                new_insects_dict = {}
                 new_tracker_ids = set()
                 for item in insects_list:
                     tid = item.get("tracker_id")
                     if tid is not None and tid not in logged_tracker_ids:
-                        new_insects.append(item)
-                        new_tracker_ids.add(tid)
-                if new_insects:
+                        # Nếu một tracker_id xuất hiện nhiều lần, chỉ lấy 1 lần đầu
+                        if tid not in new_insects_dict:
+                            new_insects_dict[tid] = item
+                            new_tracker_ids.add(tid)
+                if new_insects_dict:
+                    new_insects = list(new_insects_dict.values())
                     counts = Counter(item['class'] for item in new_insects)
                     detect_id = str(uuid.uuid4())
                     image_path = os.path.join(CAPTURE_DIR, f"{detect_id}.jpg")
