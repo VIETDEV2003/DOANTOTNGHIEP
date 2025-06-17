@@ -63,6 +63,7 @@ MQTT_PASS = "12345678"
 MQTT_TOPIC = "doan/contrung/control"
 SENSOR_TOPIC = "doan/contrung/sensor"
 MQTT_SCHEDULE_RESP = "doan/contrung/schedule"
+MQTT_DETECT_RESULT = "doan/contrung/result"
 
 CAPTURE_DIR = "captures"
 LOG_DIR = "logs"
@@ -143,10 +144,16 @@ def process_frame_with_hailo(frame):
             "height_mm": height_mm,
             "detected_at": now,
         })
-        print(f"Phat hien {class_name} ({width_mm}mm x {height_mm}mm) tai vi tri ({x1}, {y1}) den ({x2}, {y2})")
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(frame, f"{class_name}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     return frame, insects_list
+
+def send_detect_mqtt(insects_list):
+    client = mqtt.Client()
+    client.username_pw_set(MQTT_USER, MQTT_PASS)
+    client.connect(MQTT_HOST, MQTT_PORT, 60)
+    client.publish(MQTT_DETECT_RESULT, json.dumps({"insects": insects_list}, ensure_ascii=False))
+    client.disconnect()
 
 def send_conveyor_control(speed, time_ms):
     client = mqtt.Client()
@@ -254,7 +261,7 @@ def control():
     except Exception as e:
         return jsonify({"status": "fail", "msg": str(e)}), 400
 
-# BỎ HẲN ROUTE /capture, realtime sẽ gửi qua socket từ camera_stream
+# BỎ HẲN ROUTE /capture, realtime sẽ gửi qua MQTT từ camera_stream
 
 @app.route('/camera_stream')
 def camera_stream():
@@ -264,9 +271,7 @@ def camera_stream():
             if frame is not None:
                 frame_draw, insects_list = process_frame_with_hailo(frame.copy())
                 if insects_list:
-                    socketio.emit('detect_result', {
-                        "insects": insects_list
-                    })
+                    send_detect_mqtt(insects_list)
                 _, buffer = cv2.imencode('.jpg', frame_draw)
                 frame_bytes = buffer.tobytes()
                 yield (b'--frame\r\n'
