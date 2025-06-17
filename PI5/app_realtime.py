@@ -40,12 +40,18 @@ tracker = sv.ByteTrack()  # tracking toàn cục
 box_annotator = sv.RoundBoxAnnotator()
 label_annotator = sv.LabelAnnotator()
 
+
 def camera_capture_loop(index):
     global global_frame
     cap = cv2.VideoCapture(index)
     if not cap.isOpened():
         print(f"Khong mo duoc camera o index {index}")
         return
+
+    # Set Full HD resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
     while True:
         ret, frame = cap.read()
         if not ret:
