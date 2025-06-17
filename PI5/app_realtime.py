@@ -12,8 +12,6 @@ import json
 import glob
 import queue
 import supervision as sv
-import eventlet
-import eventlet.wsgi
 import uuid
 
 # --------- Hailo imports ----------
