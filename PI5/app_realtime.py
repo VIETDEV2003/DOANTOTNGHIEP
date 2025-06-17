@@ -369,6 +369,57 @@ def list_schedule():
         time.sleep(0.1)
     return jsonify(schedule_cache)
 
+@app.route('/turn_off_led', methods=['POST'])
+def turn_off_led():
+    try:
+        client = mqtt.Client()
+        client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.connect(MQTT_HOST, MQTT_PORT, 60)
+        client.publish(MQTT_TOPIC, json.dumps({"led1": "off"}))
+        client.disconnect()
+        return jsonify({"msg": "Đã gửi lệnh tắt đèn qua MQTT!"})
+    except Exception as e:
+        return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
+
+
+@app.route('/turn_on_led', methods=['POST'])
+def turn_on_led():
+    try:
+        client = mqtt.Client()
+        client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.connect(MQTT_HOST, MQTT_PORT, 60)
+        client.publish(MQTT_TOPIC, json.dumps({"led1": "on"}))
+        client.disconnect()
+        return jsonify({"msg": "Đã gửi lệnh bật đèn qua MQTT!"})
+    except Exception as e:
+        return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
+
+@app.route('/turn_off_uva', methods=['POST'])
+def turn_off_uva():
+    try:
+        client = mqtt.Client()
+        client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.connect(MQTT_HOST, MQTT_PORT, 60)
+        client.publish(MQTT_TOPIC, json.dumps({"led2": "off"}))
+        client.disconnect()
+        return jsonify({"msg": "Đã gửi lệnh tắt đèn UVA qua MQTT!"})
+    except Exception as e:
+        return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
+
+
+@app.route('/turn_on_uva', methods=['POST'])
+def turn_on_uva():
+    try:
+        client = mqtt.Client()
+        client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.connect(MQTT_HOST, MQTT_PORT, 60)
+        client.publish(MQTT_TOPIC, json.dumps({"led2": "on"}))
+        client.disconnect()
+        return jsonify({"msg": "Đã gửi lệnh bật đèn UVA qua MQTT!"})
+    except Exception as e:
+        return jsonify({"msg": "Lỗi gửi MQTT: " + str(e)}), 500
+
+
 def send_conveyor_forever():
     cfg = load_config()
     speed = cfg.get("speed", 255)
