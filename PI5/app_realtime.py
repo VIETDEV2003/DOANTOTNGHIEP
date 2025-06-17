@@ -317,7 +317,7 @@ def camera_stream():
                     last_insect_time = now
                     if not conveyor_running:
                         cfg = load_config()
-                        speed = cfg.get("speed", 255)
+                        speed = cfg.get("speed", 200)
                         send_conveyor_control(speed, -1)
                         conveyor_running = True
                         print("Đã gửi lệnh CHẠY băng tải vì phát hiện côn trùng")
@@ -380,7 +380,7 @@ def get_config():
 def save_config_api():
     try:
         data = request.get_json()
-        speed = int(data.get("speed", 255))
+        speed = int(data.get("speed", 200))
         ddos = int(data.get("ddos", 5))
         auto_stop_delay = float(data.get("auto_stop_delay", 5))  # mới thêm
 
@@ -480,7 +480,7 @@ def turn_on_uva():
 
 def send_conveyor_forever():
     cfg = load_config()
-    speed = cfg.get("speed", 255)
+    speed = cfg.get("speed", 200)
     time_ms = -1
     send_conveyor_control(speed, time_ms)
     print(f"Đã gửi lệnh chạy băng tải: speed={speed}, time={time_ms}")
