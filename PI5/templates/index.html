@@ -797,15 +797,7 @@
                 });
         };
     });
-
-    const options = {
-        username: 'user1',
-        password: '12345678',
-        connectTimeout: 4000,
-    }
-    // Kết nối tới MQTT broker
-    const client = mqtt.connect('ws://103.146.22.13:9001', options);
-
+    
     client.on('connect', function () {
         console.log('MQTT connected');
         // Subscribe vào topic schedule
