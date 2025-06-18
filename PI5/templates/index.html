@@ -411,7 +411,8 @@
                                    required>
                         </div>
                         <div class="mb-3">
-                            <label for="autoStopDelay" class="form-label">Thời gian băng tải chờ khi không có côn trùng tới khi dừng:</label>
+                            <label for="autoStopDelay" class="form-label">Thời gian băng tải chờ khi không có côn trùng
+                                tới khi dừng:</label>
                             <input type="number" class="form-control" id="autoStopDelay" name="auto_stop_delay"
                                    required>
                         </div>
@@ -797,17 +798,43 @@
         };
     });
 
-    document.addEventListener('DOMContentLoaded', loadScheduleList);
+    const options = {
+        username: 'user1',
+        password: '12345678',
+        connectTimeout: 4000,
+    }
+    // Kết nối tới MQTT broker
+    const client = mqtt.connect('ws://103.146.22.13:9001', options);
 
-    function loadScheduleList() {
-        fetch('/list_schedule')
-            .then(res => res.json())
-            .then(list => {
-                const tbody = document.querySelector('#scheduleList tbody');
-                tbody.innerHTML = "";
-                if (Array.isArray(list) && list.length > 0) {
-                    list.forEach((item, idx) => {
-                        tbody.innerHTML += `
+    client.on('connect', function () {
+        console.log('MQTT connected');
+        // Subscribe vào topic schedule
+        client.subscribe('doan/contrung/schedule', function (err) {
+            if (!err) {
+                console.log('Subscribed to doan/contrung/schedule');
+            }
+        });
+    });
+
+    client.on('message', function (topic, message) {
+        if (topic === 'doan/contrung/schedule') {
+            try {
+                // Parse và show lên bảng
+                const list = JSON.parse(message.toString());
+                renderScheduleList(list);
+            } catch (e) {
+                console.error("Lỗi parse lịch!", e, message.toString());
+            }
+        }
+    });
+
+    // Hàm render lại bảng schedule
+    function renderScheduleList(list) {
+        const tbody = document.querySelector('#scheduleList tbody');
+        tbody.innerHTML = "";
+        if (Array.isArray(list) && list.length > 0) {
+            list.forEach((item, idx) => {
+                tbody.innerHTML += `
                     <tr>
                         <td>${idx + 1}</td>
                         <td>
@@ -823,16 +850,15 @@
                         </td>
                     </tr>
                 `;
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Không có lịch nào!</td></tr>`;
-                }
             });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Không có lịch nào!</td></tr>`;
+        }
     }
 
     function deleteSchedule(index) {
         if (!confirm("Bạn có chắc muốn xóa lịch này?")) return;
-        // Gửi lệnh delete qua /control (giống add_schedule)
+// Gửi lệnh delete qua /control (giống add_schedule)
         const payload = {
             action: "delete_schedule",
             index: index // index này là thứ tự trong mảng (bắt đầu từ 0)
