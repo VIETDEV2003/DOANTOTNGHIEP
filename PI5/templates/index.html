@@ -792,15 +792,17 @@
         };
     });
 
-    fetch('/list_schedule');
-
-    const options = {
-        username: 'user1',
-        password: '12345678',
-        connectTimeout: 4000,
-    }
-    // Kết nối tới MQTT broker
-    const client = mqtt.connect('ws://103.146.22.13:9001', options);
+    fetch('/list_schedule')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === "ok") {
+            } else {
+                console.error("Lỗi lấy danh sách lịch:", data.msg);
+            }
+        })
+        .catch(err => {
+            console.error("Lỗi kết nối API:", err);
+        });
 
     client.on('connect', function () {
         console.log('MQTT connected');
