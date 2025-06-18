@@ -17,7 +17,7 @@ import uuid
 # --------- Hailo imports ----------
 from utils import HailoAsyncInference
 
-HEF_PATH = "contrung_model.hef"
+HEF_PATH = "yolov8n.hef"
 LABEL_PATH = "contrung_labels.txt"
 
 with open(LABEL_PATH, "r", encoding="utf-8") as f:
